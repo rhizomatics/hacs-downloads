@@ -25,5 +25,5 @@
     "assetName": "remote_logger_stats.zip",
     "mark": "RL",
     "description": "OTel and Syslog Forwarding for Home Assistant"
-  },
+  }
 ]
