@@ -2,22 +2,34 @@
   "schemaVersion": 1,
   "snapshots": [
     {
-      "capturedAt": "2026-09-12T14:37:44.555Z",
+      "capturedAt": "2026-09-12T14:39:57.020Z",
       "projects": {
         "supernotify": {
           "total": 0,
           "releases": {},
-          "clones": null
+          "clones": {
+            "date": "2026-09-11",
+            "count": 266,
+            "uniques": 74
+          }
         },
         "autoarm": {
           "total": 0,
           "releases": {},
-          "clones": null
+          "clones": {
+            "date": "2026-09-11",
+            "count": 2,
+            "uniques": 2
+          }
         },
         "remote_logger": {
           "total": 0,
           "releases": {},
-          "clones": null
+          "clones": {
+            "date": "2026-09-11",
+            "count": 3,
+            "uniques": 3
+          }
         }
       }
     }
