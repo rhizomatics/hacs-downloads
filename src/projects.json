@@ -1,74 +1,29 @@
 [
   {
-    "id": "oralb-ha",
-    "name": "Oral-B Live",
-    "owner": "thomasgregg",
-    "repo": "oralb-ha",
-    "assetName": "oralb_live.zip",
-    "mark": "OB",
-    "description": "the Oral-B Live Home Assistant integration"
+    "id": "supernotify",
+    "name": "Supernotify",
+    "owner": "rhizomatics",
+    "repo": "supernotify",
+    "assetName": "supernotify_stats.zip",
+    "mark": "SN",
+    "description": "Unified notifications for Home Assistant"
   },
   {
-    "id": "elco-aerotop",
-    "name": "ELCO Aerotop",
-    "owner": "thomasgregg",
-    "repo": "elco-aerotop",
-    "assetName": "elco_aerotop.zip",
-    "mark": "EA",
-    "description": "the ELCO Aerotop Home Assistant integration"
+    "id": "autoarm",
+    "name": "AutoArm",
+    "owner": "rhizomatics",
+    "repo": "autoarm",
+    "assetName": "autoarm_stats.zip",
+    "mark": "AA",
+    "description": "Automatic Alarm Panel Arming for Home Assistant"
   },
   {
-    "id": "intex-ha",
-    "name": "Intex SX2100",
-    "owner": "thomasgregg",
-    "repo": "intex-ha",
-    "assetName": "intex_sx2100.zip",
-    "mark": "IX",
-    "description": "the Intex SX2100 Pool Pump Home Assistant integration"
+    "id": "remote_logger",
+    "name": "Remote Logger",
+    "owner": "rhizomatics",
+    "repo": "remote_logger",
+    "assetName": "remote_logger_stats.zip",
+    "mark": "RL",
+    "description": "OTel and Syslog Forwarding for Home Assistant"
   },
-  {
-    "id": "frigate-delivery-card",
-    "name": "Frigate Delivery Card",
-    "owner": "thomasgregg",
-    "repo": "frigate-delivery-card",
-    "assetName": "frigate-delivery-card.js",
-    "mark": "FD",
-    "description": "the Frigate Delivery Home Assistant dashboard card"
-  },
-  {
-    "id": "saltwatch-card",
-    "name": "SaltWatch Card",
-    "owner": "thomasgregg",
-    "repo": "saltwatch-card",
-    "assetName": "saltwatch-card.js",
-    "mark": "SW",
-    "description": "the SaltWatch Home Assistant dashboard card"
-  },
-  {
-    "id": "saltwatch",
-    "name": "SaltWatch Firmware",
-    "owner": "thomasgregg",
-    "repo": "saltwatch",
-    "assetNameTemplate": "saltwatch-{version}.factory.bin",
-    "mark": "SF",
-    "description": "the SaltWatch ESPHome firmware"
-  },
-  {
-    "id": "ring-view",
-    "name": "Ring View",
-    "owner": "thomasgregg",
-    "repo": "ring-view",
-    "assetName": "ring-view.js",
-    "mark": "RV",
-    "description": "the Ring View Home Assistant dashboard card"
-  },
-  {
-    "id": "ring-webrtc-backend-patch",
-    "name": "Ring WebRTC Backend Patch",
-    "owner": "thomasgregg",
-    "repo": "ring-webrtc-backend-patch",
-    "assetName": "ring_webrtc_backend_patch.zip",
-    "mark": "RW",
-    "description": "the Ring WebRTC backend patch for Home Assistant"
-  }
 ]
