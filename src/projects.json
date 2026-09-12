@@ -4,7 +4,7 @@
     "name": "Supernotify",
     "owner": "rhizomatics",
     "repo": "supernotify",
-    "assetNameTemplate": "{version}.zip",
+    "assetNameTemplate": "{tag}.zip",
     "mark": "SN",
     "description": "Unified notifications for Home Assistant"
   },
@@ -13,7 +13,7 @@
     "name": "AutoArm",
     "owner": "rhizomatics",
     "repo": "autoarm",
-    "assetNameTemplate": "{version}.zip",
+    "assetNameTemplate": "{tag}.zip",
     "mark": "AA",
     "description": "Automatic Alarm Panel Arming for Home Assistant"
   },
@@ -22,7 +22,7 @@
     "name": "Remote Logger",
     "owner": "rhizomatics",
     "repo": "remote_logger",
-    "assetNameTemplate": "{version}.zip",
+    "assetNameTemplate": "{tag}.zip",
     "mark": "RL",
     "description": "OTel and Syslog Forwarding for Home Assistant"
   }
