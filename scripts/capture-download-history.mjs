@@ -53,7 +53,8 @@ async function fetchReleaseStats(project) {
 async function fetchCloneStats(project, capturedDate) {
   const response = await fetch(`https://api.github.com/repos/${project.owner}/${project.repo}/traffic/clones`, { headers: trafficHeaders });
   if (response.status === 403 || response.status === 404) {
-    console.warn(`${project.owner}/${project.repo}: no access to traffic stats (${response.status}), skipping clone stats.`);
+    const body = await response.text();
+    console.warn(`${project.owner}/${project.repo}: no access to traffic stats (${response.status}): ${body}`);
     return null;
   }
   if (!response.ok) throw new Error(`${project.owner}/${project.repo}: traffic API returned ${response.status}`);
