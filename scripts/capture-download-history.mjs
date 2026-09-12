@@ -60,10 +60,12 @@ async function fetchCloneStats(project, capturedDate) {
   if (!response.ok) throw new Error(`${project.owner}/${project.repo}: traffic API returned ${response.status}`);
 
   const payload = await response.json();
-  // The most recent entry can be a partial "today", so only count completed days.
-  const completedDays = payload.clones.filter((day) => day.timestamp.slice(0, 10) !== capturedDate);
-  const latest = completedDays.at(-1);
-  return latest ? { date: latest.timestamp.slice(0, 10), count: latest.count, uniques: latest.uniques } : null;
+  // The most recent entry can be a partial "today", so only keep completed days.
+  // GitHub returns up to 14 days per call, so keep the whole window (not just
+  // the latest day) to backfill history beyond what daily captures alone would give.
+  return payload.clones
+    .filter((day) => day.timestamp.slice(0, 10) !== capturedDate)
+    .map((day) => ({ date: day.timestamp.slice(0, 10), count: day.count, uniques: day.uniques }));
 }
 
 async function fetchProject(project, capturedDate) {

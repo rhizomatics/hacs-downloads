@@ -9,6 +9,7 @@ import {
   Download,
   ExternalLink,
   GitBranch,
+  GitFork,
   Info,
   Layers3,
   Package,
@@ -65,9 +66,16 @@ type DashboardSnapshot = {
   updatedAt: string;
 };
 
+type CloneMetric = {
+  date: string;
+  count: number;
+  uniques: number;
+};
+
 type HistoryProjectSnapshot = {
   total: number;
   releases: Record<string, number>;
+  clones?: CloneMetric[] | null;
 };
 
 type HistorySnapshot = {
@@ -185,6 +193,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(value));
+}
+
 function timeAgo(date: Date | null) {
   if (!date) return 'Waiting for GitHub';
   const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
@@ -283,16 +295,23 @@ function buildGrowthSeries(history: DownloadHistory | null, projectId: string, p
     }
     if (baselineIndex < 0) break;
 
-    const date = new Date(endpoint.capturedAt);
     series.unshift({
       capturedAt: endpoint.capturedAt,
-      label: new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(date),
+      label: formatShortDate(endpoint.capturedAt),
       value: endpoint.total - points[baselineIndex].total,
     });
     endpointIndex = baselineIndex;
   }
 
   return series;
+}
+
+function buildCloneSeries(history: DownloadHistory | null, projectId: string, limit = 14): CloneMetric[] {
+  const byDate = new Map<string, CloneMetric>();
+  for (const snapshot of history?.snapshots ?? []) {
+    for (const day of snapshot.projects[projectId]?.clones ?? []) byDate.set(day.date, day);
+  }
+  return [...byDate.values()].sort((a, b) => Date.parse(a.date) - Date.parse(b.date)).slice(-limit);
 }
 
 function formatSignedNumber(value: number) {
@@ -688,6 +707,14 @@ export default function Home() {
     };
   }, [history, project.id, summary]);
 
+  const cloneSeries = useMemo(() => buildCloneSeries(history, project.id), [history, project.id]);
+  const maxClones = Math.max(1, ...cloneSeries.map((point) => point.count));
+  const latestClones = cloneSeries.at(-1) ?? null;
+  const previousClones = cloneSeries.at(-2) ?? null;
+  const cloneComparison = latestClones && previousClones && previousClones.count > 0
+    ? ((latestClones.count - previousClones.count) / previousClones.count) * 100
+    : null;
+
   const growthSeries = useMemo(() => buildGrowthSeries(history, project.id, growthRange), [growthRange, history, project.id]);
   const maxGrowth = Math.max(1, ...growthSeries.map((point) => Math.abs(point.value)));
   const latestGrowth = growthSeries.at(-1) ?? null;
@@ -928,6 +955,41 @@ export default function Home() {
         <Info size={18} aria-hidden="true" />
         <div><strong>What this measures</strong><p>GitHub counts requests for the tracked release asset. These figures are release downloads, not unique users or confirmed installations, and they exclude files served through other channels.</p></div>
         <a href="https://docs.github.com/en/rest/releases/assets#about-release-assets" target="_blank" rel="noreferrer">Methodology <ExternalLink size={12} /></a>
+      </section>
+
+      <section className="panel growth-panel" aria-labelledby="clones-title">
+        <div className="card-heading growth-heading">
+          <div>
+            <p className="eyebrow">Repository activity</p>
+            <h2 id="clones-title">Git clones</h2>
+          </div>
+        </div>
+        <div className="growth-layout">
+          <div className="velocity-chart" role="img" aria-label={`Daily git clones for ${project.name}`}>
+            {cloneSeries.length === 0
+              ? <div className="growth-placeholder">
+                  <GitFork size={18} aria-hidden="true" />
+                  <strong>{historyStatus === 'loading' ? 'Loading clone history…' : historyStatus === 'error' ? 'Clone history is unavailable' : 'Collecting clone history'}</strong>
+                  <span>{historyStatus === 'error' ? 'Live totals remain available; clone data will return when the history file can be loaded.' : 'Clone counts appear once GitHub traffic data has been captured for this repository.'}</span>
+                </div>
+              : cloneSeries.map((point, index) => (
+                <div className="velocity-column" key={point.date} aria-label={`${formatShortDate(point.date)}: ${point.count} clones, ${point.uniques} unique cloners`}>
+                  <span className="velocity-value">{formatNumber(point.count)}</span>
+                  <span className="velocity-track"><i style={{ height: `${Math.max((point.count / maxClones) * 100, point.count ? 5 : 0)}%` }} /></span>
+                  <span className="velocity-label">{index % 2 === 0 || index === cloneSeries.length - 1 ? formatShortDate(point.date) : ''}</span>
+                </div>
+              ))}
+          </div>
+          <aside className="growth-summary" aria-live="polite">
+            <span>Latest day</span>
+            <strong>{latestClones ? formatNumber(latestClones.count) : '—'}</strong>
+            <small>{latestClones ? `${formatNumber(latestClones.uniques)} unique cloners` : 'clones'}</small>
+            <div className={`growth-comparison${cloneComparison !== null && cloneComparison < 0 ? ' is-down' : ''}`}>
+              {cloneComparison === null ? 'Waiting for a prior day' : `${formatGrowthPercentage(cloneComparison)} vs prior day`}
+            </div>
+            <p>Counts git clone/fetch requests seen by GitHub, separate from the release downloads above.</p>
+          </aside>
+        </div>
       </section>
 
       <footer>
