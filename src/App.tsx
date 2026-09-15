@@ -319,9 +319,9 @@ function GrowthCell({ label, delta, historyStatus }: { label: string; delta: Gro
   );
 }
 
-function StatCard({ label, value, note, icon, growth, historyStatus, primary = false, loading = false }: { label: string; value: string; note: ReactNode; icon: ReactNode; growth?: MetricGrowth; historyStatus: 'loading' | 'ready' | 'error'; primary?: boolean; loading?: boolean }) {
+function StatCard({ label, value, note, icon, growth, historyStatus, loading = false }: { label: string; value: string; note: ReactNode; icon: ReactNode; growth?: MetricGrowth; historyStatus: 'loading' | 'ready' | 'error'; loading?: boolean }) {
   return (
-    <article className={`stat-card${primary ? ' stat-primary' : ''}${loading ? ' is-loading' : ''}`} aria-busy={loading}>
+    <article className={`stat-card${loading ? ' is-loading' : ''}`} aria-busy={loading}>
       <div className="stat-topline">
         <span className="stat-label">{label}</span>
         <span className="stat-icon" aria-hidden="true">{icon}</span>
@@ -799,7 +799,7 @@ export default function Home() {
       </section>
 
       <section className="stats-grid" aria-label={`${project.name} release download summary`}>
-        <StatCard primary loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Release downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
+        <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Release downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
         <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.latest} label="Latest release" value={summary ? formatNumber(summary.latest.downloads) : '—'} icon={<Activity size={18} />} note={summary ? <><span className="version-chip">{summary.latest.version}</span> asset downloads</> : emptyNote} />
         <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.leader} label="Most downloaded" value={summary ? formatNumber(summary.leader.downloads) : '—'} icon={<TrendingUp size={18} />} note={summary ? <><span className="version-chip">{summary.leader.version}</span> · {summary.leaderShare}% of total</> : emptyNote} />
         <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.average} label="Active-release avg." value={summary ? formatNumber(summary.average) : '—'} icon={<BarChart3 size={18} />} note={summary ? <>Average among downloaded versions</> : emptyNote} />
@@ -863,12 +863,12 @@ export default function Home() {
           {releaseComparison && (
             <div className="release-benchmark" aria-label={`Latest release comparison: ${releaseComparison.latest.version} has ${formatNumber(releaseComparison.latest.downloads)} downloads, compared with the previous record of ${formatNumber(releaseComparison.previousBest.downloads)} downloads held by ${releaseComparison.previousBest.version}`}>
               <div className="benchmark-summary">
-                <span>{releaseComparison.latest.version} · {formatReleaseAge(releaseComparison.ageDays)}</span>
                 <strong>{releaseComparison.state === 'ahead'
                   ? 'New release record'
                   : releaseComparison.state === 'matched'
                     ? 'Previous record matched'
                     : `${releaseComparison.progressPercentage}% of previous record`}</strong>
+                <span>{releaseComparison.latest.version} · {formatReleaseAge(releaseComparison.ageDays)}</span>
               </div>
               <div className="benchmark-progress">
                 <div className="benchmark-track" aria-hidden="true">
@@ -879,10 +879,10 @@ export default function Home() {
                 </div>
               </div>
               <span className="benchmark-result">{releaseComparison.state === 'ahead'
-                ? `${formatSignedNumber(releaseComparison.difference)} downloads above ${releaseComparison.previousBest.version}`
+                ? `${formatSignedNumber(releaseComparison.difference)} vs ${releaseComparison.previousBest.version}`
                 : releaseComparison.state === 'matched'
                   ? `Matched ${releaseComparison.previousBest.version}`
-                  : `${formatNumber(Math.abs(releaseComparison.difference))} downloads to match ${releaseComparison.previousBest.version}`}</span>
+                  : `${formatNumber(Math.abs(releaseComparison.difference))} to match ${releaseComparison.previousBest.version}`}</span>
             </div>
           )}
           <div
