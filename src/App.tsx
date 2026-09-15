@@ -15,12 +15,14 @@ import {
   RefreshCw,
   Sparkles,
   Star,
+  Trophy,
   TrendingUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import projectConfigs from './projects.json';
 import { formatGitHubStarCount, parseGitHubStarCount } from './github';
+import { buildReleaseComparison, formatReleaseAge } from './releaseComparison';
 
 type ProjectAsset =
   | { assetName: string; assetNameTemplate?: never }
@@ -700,13 +702,23 @@ export default function Home() {
     const selected = range === 'recent' ? releases.slice(0, 5) : releases;
     return [...selected].reverse();
   }, [range, releases]);
+  const latestChartVersion = chartReleases.at(-1)?.version;
+
+  const releaseComparison = useMemo(() => buildReleaseComparison(releases), [releases]);
 
   useLayoutEffect(() => {
     const chartArea = chartAreaRef.current;
     if (chartArea) chartArea.scrollLeft = chartArea.scrollWidth;
-  }, [chartReleases.length, project.id, range]);
+  }, [latestChartVersion, project.id, range]);
 
-  const maxDownloads = Math.max(1, ...chartReleases.map((release) => release.downloads));
+  const maxDownloads = Math.max(
+    1,
+    releaseComparison?.previousBest.downloads ?? 0,
+    ...chartReleases.map((release) => release.downloads),
+  );
+  const benchmarkLineTop = releaseComparison
+    ? 20 + (1 - (releaseComparison.previousBest.downloads / maxDownloads)) * 236
+    : null;
   const isInitialLoad = !summary && status === 'loading';
   const emptyNote = isInitialLoad
     ? 'Loading live GitHub data…'
@@ -842,23 +854,59 @@ export default function Home() {
               <button className={range === 'all' ? 'active' : ''} onClick={() => setRange('all')} type="button">All</button>
             </div>
           </div>
+          {releaseComparison && (
+            <div className={`release-benchmark state-${releaseComparison.state}`} aria-label={`Latest release comparison: ${releaseComparison.latest.version} has ${formatNumber(releaseComparison.latest.downloads)} downloads, compared with the previous record of ${formatNumber(releaseComparison.previousBest.downloads)} downloads held by ${releaseComparison.previousBest.version}`}>
+              <div className="benchmark-release benchmark-current">
+                <span>Latest · {formatReleaseAge(releaseComparison.ageDays).replace('Released ', '')}</span>
+                <strong>{releaseComparison.latest.version}</strong>
+                <small>{formatNumber(releaseComparison.latest.downloads)} downloads</small>
+              </div>
+              <div className="benchmark-progress">
+                <div className="benchmark-track" aria-hidden="true">
+                  <i style={{ width: `${Math.min(releaseComparison.progressPercentage, 100)}%` }} />
+                </div>
+                <p>
+                  <strong>{releaseComparison.progressPercentage}%</strong>
+                  <span>{releaseComparison.state === 'ahead'
+                    ? `New record · ${formatSignedNumber(releaseComparison.difference)}`
+                    : releaseComparison.state === 'matched'
+                      ? 'Previous record matched'
+                      : `${formatNumber(Math.abs(releaseComparison.difference))} downloads to match`}</span>
+                </p>
+              </div>
+              <div className="benchmark-release benchmark-record">
+                <span><Trophy size={12} aria-hidden="true" /> Best previous release</span>
+                <strong>{releaseComparison.previousBest.version}</strong>
+                <small>{formatNumber(releaseComparison.previousBest.downloads)} downloads</small>
+              </div>
+            </div>
+          )}
           <div className="chart-area" ref={chartAreaRef}>
             <div className="bar-chart" role="img" aria-label={`Bar chart showing ${project.name} release asset downloads by version`}>
               <span className="grid-line grid-line-100" aria-hidden="true" />
               <span className="grid-line grid-line-50" aria-hidden="true" />
+              {releaseComparison && benchmarkLineTop !== null && (
+                <span className="benchmark-guide" style={{ top: `${benchmarkLineTop}px` }} aria-hidden="true">
+                  <small>Previous record · {formatNumber(releaseComparison.previousBest.downloads)}</small>
+                </span>
+              )}
               {!summary && <div className={`data-placeholder${isInitialLoad ? ' is-loading' : ''}`}>{emptyNote}</div>}
-              {chartReleases.map((release) => (
-                <a className="bar-column" href={release.url} target="_blank" rel="noreferrer" key={release.version} aria-label={`${release.version}: ${release.downloads} downloads`}>
+              {chartReleases.map((release) => {
+                const isLatest = release.version === releaseComparison?.latest.version;
+                const isPreviousBest = release.version === releaseComparison?.previousBest.version;
+                return (
+                <a className={`bar-column${isLatest ? ' is-latest' : ''}${isPreviousBest ? ' is-previous-best' : ''}`} href={release.url} target="_blank" rel="noreferrer" key={release.version} aria-label={`${release.version}: ${release.downloads} downloads${isLatest && releaseComparison ? `, ${formatReleaseAge(releaseComparison.ageDays).toLowerCase()}` : ''}`}>
                   <span className="bar-value">{release.downloads || '–'}</span>
                   <div className="bar-track">
                     <span style={{ height: `${Math.max((release.downloads / maxDownloads) * 100, release.downloads ? 7 : 0)}%` }} />
                   </div>
-                  <span className="bar-label">{release.version}</span>
+                  <span className="bar-label">{release.version}{isLatest && <small>Latest</small>}</span>
                 </a>
-              ))}
+                );
+              })}
             </div>
           </div>
-          <p className="chart-caption">Versions are shown chronologically. Select a bar to open its GitHub release.</p>
+          <p className="chart-caption">The dashed line is the highest lifetime download count among earlier releases. A young release below it may simply need more time. Select a bar to open its GitHub release.</p>
         </article>
 
         <aside className="panel insight-card" aria-labelledby="distribution-title">

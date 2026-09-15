@@ -20,6 +20,7 @@ HACS Download Analytics turns the download counters exposed by GitHub Releases i
 - See each selected repository's GitHub star count beside its repository link.
 - Compare 24-hour and 7-day growth for totals, latest releases, leading releases, and active-release averages.
 - Explore daily and weekly download velocity as snapshot history accumulates.
+- Compare the latest release with the strongest earlier version, including release age and progress toward the previous download record.
 - Switch projects without reloading and share the selected project through the URL.
 - Cache successful responses locally to reduce GitHub API usage.
 - Preserve cached data and retry automatically when GitHub rate limits are reached.
