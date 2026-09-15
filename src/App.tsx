@@ -718,6 +718,9 @@ export default function Home() {
   const benchmarkLineTop = releaseComparison
     ? 20 + (1 - (releaseComparison.previousBest.downloads / maxDownloads)) * 236
     : null;
+  const benchmarkRecordPosition = releaseComparison?.state === 'ahead'
+    ? (releaseComparison.previousBest.downloads / releaseComparison.latest.downloads) * 100
+    : null;
   const isInitialLoad = !summary && status === 'loading';
   const emptyNote = isInitialLoad
     ? 'Loading live GitHub data…'
@@ -860,7 +863,7 @@ export default function Home() {
           {releaseComparison && (
             <div className="release-benchmark" aria-label={`Latest release comparison: ${releaseComparison.latest.version} has ${formatNumber(releaseComparison.latest.downloads)} downloads, compared with the previous record of ${formatNumber(releaseComparison.previousBest.downloads)} downloads held by ${releaseComparison.previousBest.version}`}>
               <div className="benchmark-summary">
-                <span>{formatReleaseAge(releaseComparison.ageDays)}</span>
+                <span>{releaseComparison.latest.version} · {formatReleaseAge(releaseComparison.ageDays)}</span>
                 <strong>{releaseComparison.state === 'ahead'
                   ? 'New release record'
                   : releaseComparison.state === 'matched'
@@ -870,13 +873,16 @@ export default function Home() {
               <div className="benchmark-progress">
                 <div className="benchmark-track" aria-hidden="true">
                   <i style={{ width: `${Math.min(releaseComparison.progressPercentage, 100)}%` }} />
+                  {benchmarkRecordPosition !== null && (
+                    <span className="benchmark-record-marker" style={{ left: `${benchmarkRecordPosition}%` }} />
+                  )}
                 </div>
               </div>
               <span className="benchmark-result">{releaseComparison.state === 'ahead'
-                ? `${formatSignedNumber(releaseComparison.difference)} downloads above`
+                ? `${formatSignedNumber(releaseComparison.difference)} downloads above ${releaseComparison.previousBest.version}`
                 : releaseComparison.state === 'matched'
-                  ? 'Matched exactly'
-                  : `${formatNumber(Math.abs(releaseComparison.difference))} downloads to match`}</span>
+                  ? `Matched ${releaseComparison.previousBest.version}`
+                  : `${formatNumber(Math.abs(releaseComparison.difference))} downloads to match ${releaseComparison.previousBest.version}`}</span>
             </div>
           )}
           <div
