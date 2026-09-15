@@ -215,6 +215,12 @@ a { color: inherit; text-decoration: none; }
   padding: 8px 4px 29px;
   position: relative;
 }
+.velocity-chart, .chart-area {
+  -webkit-overflow-scrolling: touch;
+  outline: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
 .velocity-column { align-items: stretch; display: grid; grid-template-rows: 19px 1fr 22px; height: 100%; min-width: 34px; }
 .velocity-value { color: var(--muted); font-size: 9px; font-weight: 750; text-align: center; }
 .velocity-track { align-items: end; display: flex; height: 100%; justify-content: center; }
@@ -248,22 +254,19 @@ a { color: inherit; text-decoration: none; }
 .benchmark-release > strong { font-family: var(--font-mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .benchmark-release > small { color: var(--muted); font-size: 9px; }
 .benchmark-record { border-left: 1px solid var(--line); padding-left: 17px; }
-.benchmark-record > span svg { color: #bb7a23; }
 .benchmark-progress { min-width: 0; }
 .benchmark-track { background: #dfe8ed; border-radius: 999px; height: 7px; overflow: hidden; }
 .benchmark-track i { background: linear-gradient(90deg, #0b8e81, var(--teal)); border-radius: inherit; display: block; height: 100%; min-width: 3px; }
-.release-benchmark.state-ahead .benchmark-track i, .release-benchmark.state-matched .benchmark-track i { background: linear-gradient(90deg, #087f74, #19c6ad, #efbd62); }
 .benchmark-progress p { align-items: baseline; display: flex; gap: 7px; justify-content: space-between; margin: 6px 0 0; }
 .benchmark-progress p strong { color: var(--teal-dark); font-size: 10px; }
-.release-benchmark.state-ahead .benchmark-progress p strong, .release-benchmark.state-matched .benchmark-progress p strong { color: #9c651b; }
 .benchmark-progress p span { color: var(--muted); font-size: 8px; font-weight: 700; text-align: right; }
 .chart-area { height: 286px; margin-top: 22px; overflow-x: auto; overflow-y: hidden; position: relative; }
 .grid-line { border-top: 1px dashed #dfe7ed; left: 0; position: absolute; right: 0; z-index: 0; }
 .grid-line-100 { top: 20px; }
 .grid-line-50 { top: 52%; }
 .bar-chart { align-items: end; border-bottom: 1px solid var(--line); display: grid; gap: clamp(8px, .8vw, 14px); grid-auto-columns: minmax(52px, 1fr); grid-auto-flow: column; height: 100%; min-width: 100%; padding: 0 10px; position: relative; width: max-content; z-index: 1; }
-.benchmark-guide { border-top: 1px dashed #d3943b; left: 10px; pointer-events: none; position: absolute; right: 10px; z-index: 2; }
-.benchmark-guide small { background: rgb(255 255 255 / 92%); border-radius: 4px; color: #9c651b; font-size: 8px; font-weight: 750; padding: 2px 5px; position: absolute; right: 3px; top: 3px; }
+.benchmark-guide { border-top: 1px dashed rgb(8 127 116 / 52%); left: 10px; pointer-events: none; position: absolute; right: 10px; z-index: 2; }
+.benchmark-guide small { background: rgb(255 255 255 / 92%); border-radius: 4px; color: var(--teal-dark); font-size: 8px; font-weight: 750; padding: 2px 5px; position: absolute; right: 3px; top: 3px; }
 .data-placeholder, .insight-placeholder { align-items: center; color: var(--muted); display: flex; font-size: 11px; justify-content: center; text-align: center; }
 .data-placeholder { inset: 0; position: absolute; }
 .data-placeholder.is-loading::before, .insight-placeholder.is-loading::before { animation: spin .8s linear infinite; border: 2px solid #dce5ec; border-radius: 50%; border-top-color: var(--teal); content: ''; height: 15px; margin-right: 9px; width: 15px; }
@@ -272,8 +275,6 @@ a { color: inherit; text-decoration: none; }
 .bar-value { color: var(--muted); font-size: 10px; font-weight: 750; text-align: center; }
 .bar-track { align-items: end; display: flex; height: 100%; justify-content: center; width: 100%; }
 .bar-track span { background: linear-gradient(180deg, var(--teal), #0b8e81); border-radius: 7px 7px 0 0; box-shadow: 0 -8px 22px rgb(25 198 173 / 17%); display: block; max-width: 48px; min-width: 12px; transition: filter .18s ease, transform .18s ease; width: 55%; }
-.bar-column.is-latest .bar-track span { background: linear-gradient(180deg, #173d5c, #087f74); box-shadow: 0 -8px 24px rgb(16 37 63 / 20%); }
-.bar-column.is-previous-best .bar-track span { box-shadow: 0 0 0 2px rgb(211 148 59 / 42%), 0 -8px 22px rgb(25 198 173 / 17%); }
 .bar-label { color: var(--muted); font-family: var(--font-mono); font-size: 9px; padding-top: 8px; text-align: center; white-space: nowrap; }
 .bar-label small { color: var(--teal-dark); display: block; font-family: var(--font-sans); font-size: 7px; font-weight: 800; letter-spacing: .06em; margin-top: 1px; text-transform: uppercase; }
 .chart-caption { color: #8896a6; font-size: 10px; margin: 14px 0 0; }

@@ -15,7 +15,6 @@ import {
   RefreshCw,
   Sparkles,
   Star,
-  Trophy,
   TrendingUp,
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -815,7 +814,11 @@ export default function Home() {
           </div>
         </div>
         <div className="growth-layout">
-          <div className="velocity-chart" role="img" aria-label={`${growthRange === 'daily' ? 'Daily' : 'Weekly'} new downloads for ${project.name}`}>
+          <div
+            className="velocity-chart"
+            role="img"
+            aria-label={`${growthRange === 'daily' ? 'Daily' : 'Weekly'} new downloads for ${project.name}`}
+          >
             {growthSeries.length === 0
               ? <div className="growth-placeholder">
                   <CalendarDays size={18} aria-hidden="true" />
@@ -855,7 +858,7 @@ export default function Home() {
             </div>
           </div>
           {releaseComparison && (
-            <div className={`release-benchmark state-${releaseComparison.state}`} aria-label={`Latest release comparison: ${releaseComparison.latest.version} has ${formatNumber(releaseComparison.latest.downloads)} downloads, compared with the previous record of ${formatNumber(releaseComparison.previousBest.downloads)} downloads held by ${releaseComparison.previousBest.version}`}>
+            <div className="release-benchmark" aria-label={`Latest release comparison: ${releaseComparison.latest.version} has ${formatNumber(releaseComparison.latest.downloads)} downloads, compared with the previous record of ${formatNumber(releaseComparison.previousBest.downloads)} downloads held by ${releaseComparison.previousBest.version}`}>
               <div className="benchmark-release benchmark-current">
                 <span>Latest · {formatReleaseAge(releaseComparison.ageDays).replace('Released ', '')}</span>
                 <strong>{releaseComparison.latest.version}</strong>
@@ -875,13 +878,18 @@ export default function Home() {
                 </p>
               </div>
               <div className="benchmark-release benchmark-record">
-                <span><Trophy size={12} aria-hidden="true" /> Best previous release</span>
+                <span>Previous record</span>
                 <strong>{releaseComparison.previousBest.version}</strong>
                 <small>{formatNumber(releaseComparison.previousBest.downloads)} downloads</small>
               </div>
             </div>
           )}
-          <div className="chart-area" ref={chartAreaRef}>
+          <div
+            className="chart-area"
+            ref={chartAreaRef}
+            aria-label="Scrollable release download chart"
+            role="region"
+          >
             <div className="bar-chart" role="img" aria-label={`Bar chart showing ${project.name} release asset downloads by version`}>
               <span className="grid-line grid-line-100" aria-hidden="true" />
               <span className="grid-line grid-line-50" aria-hidden="true" />
@@ -893,9 +901,8 @@ export default function Home() {
               {!summary && <div className={`data-placeholder${isInitialLoad ? ' is-loading' : ''}`}>{emptyNote}</div>}
               {chartReleases.map((release) => {
                 const isLatest = release.version === releaseComparison?.latest.version;
-                const isPreviousBest = release.version === releaseComparison?.previousBest.version;
                 return (
-                <a className={`bar-column${isLatest ? ' is-latest' : ''}${isPreviousBest ? ' is-previous-best' : ''}`} href={release.url} target="_blank" rel="noreferrer" key={release.version} aria-label={`${release.version}: ${release.downloads} downloads${isLatest && releaseComparison ? `, ${formatReleaseAge(releaseComparison.ageDays).toLowerCase()}` : ''}`}>
+                <a className={`bar-column${isLatest ? ' is-latest' : ''}`} href={release.url} target="_blank" rel="noreferrer" key={release.version} aria-label={`${release.version}: ${release.downloads} downloads${isLatest && releaseComparison ? `, ${formatReleaseAge(releaseComparison.ageDays).toLowerCase()}` : ''}`}>
                   <span className="bar-value">{release.downloads || '–'}</span>
                   <div className="bar-track">
                     <span style={{ height: `${Math.max((release.downloads / maxDownloads) * 100, release.downloads ? 7 : 0)}%` }} />
@@ -906,7 +913,7 @@ export default function Home() {
               })}
             </div>
           </div>
-          <p className="chart-caption">The dashed line is the highest lifetime download count among earlier releases. A young release below it may simply need more time. Select a bar to open its GitHub release.</p>
+          <p className="chart-caption">The dashed line marks the best earlier release. New releases may need time to catch up. Select a bar to open it on GitHub.</p>
         </article>
 
         <aside className="panel insight-card" aria-labelledby="distribution-title">
