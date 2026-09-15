@@ -859,29 +859,24 @@ export default function Home() {
           </div>
           {releaseComparison && (
             <div className="release-benchmark" aria-label={`Latest release comparison: ${releaseComparison.latest.version} has ${formatNumber(releaseComparison.latest.downloads)} downloads, compared with the previous record of ${formatNumber(releaseComparison.previousBest.downloads)} downloads held by ${releaseComparison.previousBest.version}`}>
-              <div className="benchmark-release benchmark-current">
-                <span>Latest · {formatReleaseAge(releaseComparison.ageDays).replace('Released ', '')}</span>
-                <strong>{releaseComparison.latest.version}</strong>
-                <small>{formatNumber(releaseComparison.latest.downloads)} downloads</small>
+              <div className="benchmark-summary">
+                <span>{formatReleaseAge(releaseComparison.ageDays)}</span>
+                <strong>{releaseComparison.state === 'ahead'
+                  ? 'New release record'
+                  : releaseComparison.state === 'matched'
+                    ? 'Previous record matched'
+                    : `${releaseComparison.progressPercentage}% of previous record`}</strong>
               </div>
               <div className="benchmark-progress">
                 <div className="benchmark-track" aria-hidden="true">
                   <i style={{ width: `${Math.min(releaseComparison.progressPercentage, 100)}%` }} />
                 </div>
-                <p>
-                  <strong>{releaseComparison.progressPercentage}%</strong>
-                  <span>{releaseComparison.state === 'ahead'
-                    ? `New record · ${formatSignedNumber(releaseComparison.difference)}`
-                    : releaseComparison.state === 'matched'
-                      ? 'Previous record matched'
-                      : `${formatNumber(Math.abs(releaseComparison.difference))} downloads to match`}</span>
-                </p>
               </div>
-              <div className="benchmark-release benchmark-record">
-                <span>Previous record</span>
-                <strong>{releaseComparison.previousBest.version}</strong>
-                <small>{formatNumber(releaseComparison.previousBest.downloads)} downloads</small>
-              </div>
+              <span className="benchmark-result">{releaseComparison.state === 'ahead'
+                ? `${formatSignedNumber(releaseComparison.difference)} downloads above`
+                : releaseComparison.state === 'matched'
+                  ? 'Matched exactly'
+                  : `${formatNumber(Math.abs(releaseComparison.difference))} downloads to match`}</span>
             </div>
           )}
           <div
@@ -895,7 +890,7 @@ export default function Home() {
               <span className="grid-line grid-line-50" aria-hidden="true" />
               {releaseComparison && benchmarkLineTop !== null && (
                 <span className="benchmark-guide" style={{ top: `${benchmarkLineTop}px` }} aria-hidden="true">
-                  <small>Previous record · {formatNumber(releaseComparison.previousBest.downloads)}</small>
+                  <small>Previous record</small>
                 </span>
               )}
               {!summary && <div className={`data-placeholder${isInitialLoad ? ' is-loading' : ''}`}>{emptyNote}</div>}
@@ -907,13 +902,13 @@ export default function Home() {
                   <div className="bar-track">
                     <span style={{ height: `${Math.max((release.downloads / maxDownloads) * 100, release.downloads ? 7 : 0)}%` }} />
                   </div>
-                  <span className="bar-label">{release.version}{isLatest && <small>Latest</small>}</span>
+                  <span className={`bar-label${isLatest ? ' is-latest' : ''}`}>{release.version}</span>
                 </a>
                 );
               })}
             </div>
           </div>
-          <p className="chart-caption">The dashed line marks the best earlier release. New releases may need time to catch up. Select a bar to open it on GitHub.</p>
+          <p className="chart-caption">New releases may need time to catch up. Select a bar to open it on GitHub.</p>
         </article>
 
         <aside className="panel insight-card" aria-labelledby="distribution-title">

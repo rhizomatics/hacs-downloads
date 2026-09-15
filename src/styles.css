@@ -248,18 +248,14 @@ a { color: inherit; text-decoration: none; }
 .segmented-control { background: #eef3f6; border-radius: 9px; display: flex; padding: 3px; }
 .segmented-control button { background: transparent; border: 0; border-radius: 7px; color: var(--muted); cursor: pointer; font-size: 10px; font-weight: 700; padding: 7px 10px; }
 .segmented-control button.active { background: white; box-shadow: 0 3px 9px rgb(16 37 63 / 9%); color: var(--ink); }
-.release-benchmark { align-items: center; background: #f4f8fa; border: 1px solid #e1e9ee; border-radius: 13px; display: grid; gap: 18px; grid-template-columns: minmax(130px, auto) minmax(180px, 1fr) minmax(150px, auto); margin-top: 20px; padding: 13px 15px; }
-.benchmark-release { display: grid; gap: 2px; min-width: 0; }
-.benchmark-release > span { align-items: center; color: var(--muted); display: flex; font-size: 8px; font-weight: 750; gap: 5px; letter-spacing: .05em; text-transform: uppercase; }
-.benchmark-release > strong { font-family: var(--font-mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.benchmark-release > small { color: var(--muted); font-size: 9px; }
-.benchmark-record { border-left: 1px solid var(--line); padding-left: 17px; }
+.release-benchmark { align-items: center; background: #f4f8fa; border: 1px solid #e1e9ee; border-radius: 13px; display: grid; gap: 20px; grid-template-columns: minmax(150px, auto) minmax(180px, 1fr) auto; margin-top: 20px; padding: 13px 15px; }
+.benchmark-summary { display: grid; gap: 3px; min-width: 0; }
+.benchmark-summary > span { color: var(--muted); font-size: 8px; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+.benchmark-summary > strong { color: var(--ink); font-size: 12px; letter-spacing: -.02em; }
 .benchmark-progress { min-width: 0; }
 .benchmark-track { background: #dfe8ed; border-radius: 999px; height: 7px; overflow: hidden; }
 .benchmark-track i { background: linear-gradient(90deg, #0b8e81, var(--teal)); border-radius: inherit; display: block; height: 100%; min-width: 3px; }
-.benchmark-progress p { align-items: baseline; display: flex; gap: 7px; justify-content: space-between; margin: 6px 0 0; }
-.benchmark-progress p strong { color: var(--teal-dark); font-size: 10px; }
-.benchmark-progress p span { color: var(--muted); font-size: 8px; font-weight: 700; text-align: right; }
+.benchmark-result { color: var(--muted); font-size: 9px; font-weight: 700; text-align: right; white-space: nowrap; }
 .chart-area { height: 286px; margin-top: 22px; overflow-x: auto; overflow-y: hidden; position: relative; }
 .grid-line { border-top: 1px dashed #dfe7ed; left: 0; position: absolute; right: 0; z-index: 0; }
 .grid-line-100 { top: 20px; }
@@ -275,8 +271,8 @@ a { color: inherit; text-decoration: none; }
 .bar-value { color: var(--muted); font-size: 10px; font-weight: 750; text-align: center; }
 .bar-track { align-items: end; display: flex; height: 100%; justify-content: center; width: 100%; }
 .bar-track span { background: linear-gradient(180deg, var(--teal), #0b8e81); border-radius: 7px 7px 0 0; box-shadow: 0 -8px 22px rgb(25 198 173 / 17%); display: block; max-width: 48px; min-width: 12px; transition: filter .18s ease, transform .18s ease; width: 55%; }
-.bar-label { color: var(--muted); font-family: var(--font-mono); font-size: 9px; padding-top: 8px; text-align: center; white-space: nowrap; }
-.bar-label small { color: var(--teal-dark); display: block; font-family: var(--font-sans); font-size: 7px; font-weight: 800; letter-spacing: .06em; margin-top: 1px; text-transform: uppercase; }
+.bar-label { color: var(--muted); font-family: var(--font-mono); font-size: 9px; padding-top: 10px; text-align: center; white-space: nowrap; }
+.bar-label.is-latest { color: var(--teal-dark); font-weight: 800; }
 .chart-caption { color: #8896a6; font-size: 10px; margin: 14px 0 0; }
 
 .insight-card { padding: 26px 24px; }
@@ -363,9 +359,9 @@ footer { color: #8a98a7; display: flex; font-size: 9px; justify-content: space-b
   .stat-card > strong { font-size: 36px; }
   .chart-card, .growth-panel, .insight-card, .releases-panel { padding-inline: 16px; }
   .bar-chart { min-width: 530px; }
-  .release-benchmark { gap: 12px; grid-template-columns: 1fr 1fr; }
+  .release-benchmark { gap: 12px; grid-template-columns: 1fr auto; }
   .benchmark-progress { grid-column: 1 / -1; grid-row: 2; }
-  .benchmark-record { justify-self: end; max-width: 100%; }
+  .benchmark-result { justify-self: end; }
   .insight-card { display: block; }
   .donut-wrap { padding: 24px 0; }
   .method-card { align-items: start; grid-template-columns: auto 1fr; }
