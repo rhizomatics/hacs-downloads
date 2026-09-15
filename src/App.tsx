@@ -828,7 +828,7 @@ export default function Home() {
               : growthSeries.map((point, index) => (
                 <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} new downloads`}>
                   <span className="velocity-value">{formatSignedNumber(point.value)}</span>
-                  <span className="velocity-track"><i className={point.value < 0 ? 'negative' : ''} style={{ height: `${Math.max((Math.abs(point.value) / maxGrowth) * 100, 5)}%` }} /></span>
+                  <span className="velocity-track"><i style={{ height: `${Math.max((Math.abs(point.value) / maxGrowth) * 100, 5)}%` }} /></span>
                   <span className="velocity-label">{index % 2 === 0 || index === growthSeries.length - 1 ? point.label : ''}</span>
                 </div>
               ))}
@@ -889,9 +889,7 @@ export default function Home() {
               <span className="grid-line grid-line-100" aria-hidden="true" />
               <span className="grid-line grid-line-50" aria-hidden="true" />
               {releaseComparison && benchmarkLineTop !== null && (
-                <span className="benchmark-guide" style={{ top: `${benchmarkLineTop}px` }} aria-hidden="true">
-                  <small>Previous record</small>
-                </span>
+                <span className="benchmark-guide" style={{ top: `${benchmarkLineTop}px` }} aria-hidden="true" />
               )}
               {!summary && <div className={`data-placeholder${isInitialLoad ? ' is-loading' : ''}`}>{emptyNote}</div>}
               {chartReleases.map((release) => {
