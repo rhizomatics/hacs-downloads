@@ -110,6 +110,13 @@ type GrowthSeriesPoint = {
   capturedAt: string;
   label: string;
   value: number;
+  assets?: Record<string, number>;
+};
+
+type GrowthHistoryPoint = {
+  capturedAt: string;
+  total: number;
+  assets?: Record<string, number>;
 };
 
 const PROJECTS = projectConfigs as readonly ProjectConfig[];
@@ -297,12 +304,15 @@ function buildGrowthSeries(
   projectId: string,
   period: 'daily' | 'weekly',
   getValue: (snapshot: HistoryProjectSnapshot) => number,
+  getAssets?: (snapshot: HistoryProjectSnapshot) => Record<string, number> | undefined,
 ): GrowthSeriesPoint[] {
-  const points = (history?.snapshots ?? []).flatMap((snapshot) => {
+  const points: GrowthHistoryPoint[] = (history?.snapshots ?? []).flatMap((snapshot) => {
     const projectSnapshot = snapshot.projects[projectId];
     if (!projectSnapshot) return [];
     const total = getValue(projectSnapshot);
-    return Number.isFinite(total) ? [{ capturedAt: snapshot.capturedAt, total }] : [];
+    if (!Number.isFinite(total)) return [];
+    const assets = getAssets?.(projectSnapshot);
+    return [{ capturedAt: snapshot.capturedAt, total, ...(assets ? { assets } : {}) }];
   }).sort((a, b) => Date.parse(a.capturedAt) - Date.parse(b.capturedAt));
   if (points.length < 2) return [];
 
@@ -326,15 +336,33 @@ function buildGrowthSeries(
     if (baselineIndex < 0) break;
 
     const date = new Date(endpoint.capturedAt);
+    const baseline = points[baselineIndex];
+    const assets = endpoint.assets && baseline.assets
+      ? Object.fromEntries(Object.entries(endpoint.assets).map(([assetId, downloads]) => [
+          assetId,
+          downloads - (baseline.assets?.[assetId] ?? 0),
+        ]))
+      : undefined;
     series.unshift({
       capturedAt: endpoint.capturedAt,
       label: new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(date),
-      value: endpoint.total - points[baselineIndex].total,
+      value: endpoint.total - baseline.total,
+      ...(assets ? { assets } : {}),
     });
     endpointIndex = baselineIndex;
   }
 
   return series;
+}
+
+function AssetLegend({ assets }: { assets: [TrackedAssetConfig, TrackedAssetConfig] }) {
+  return (
+    <div className="asset-legend" aria-label="Tracked asset key">
+      {assets.map((asset, index) => (
+        <span key={asset.id}><i className={index === 0 ? 'asset-primary' : 'asset-secondary'} />{asset.label}</span>
+      ))}
+    </div>
+  );
 }
 
 function formatSignedNumber(value: number) {
@@ -775,6 +803,11 @@ export default function Home() {
       if (!projectSnapshot.assets) return Number.NaN;
       return trackedAssets.reduce((sum, asset) => sum + (projectSnapshot.assets?.[asset.id] ?? 0), 0);
     },
+    hasAssetBreakdown
+      ? (projectSnapshot) => projectSnapshot.assets
+        ? Object.fromEntries(trackedAssets.map((asset) => [asset.id, projectSnapshot.assets?.[asset.id] ?? 0]))
+        : undefined
+      : undefined,
   ), [growthRange, hasAssetBreakdown, history, project.id, trackedAssets]);
   const maxGrowth = Math.max(1, ...growthSeries.map((point) => Math.abs(point.value)));
   const latestGrowth = growthSeries.at(-1) ?? null;
@@ -908,6 +941,7 @@ export default function Home() {
           <div>
             <p className="eyebrow">Growth</p>
             <h2 id="growth-title">Download velocity</h2>
+            {hasAssetBreakdown && secondaryAsset && <AssetLegend assets={[primaryAsset, secondaryAsset]} />}
           </div>
           <div className="segmented-control" aria-label="Growth interval">
             <button className={growthRange === 'daily' ? 'active' : ''} onClick={() => setGrowthRange('daily')} type="button">Daily</button>
@@ -926,18 +960,36 @@ export default function Home() {
                   <strong>{historyStatus === 'loading' ? 'Loading growth history…' : historyStatus === 'error' ? 'Growth history is unavailable' : `Collecting ${growthRange} history`}</strong>
                   <span>{historyStatus === 'error' ? 'Live totals remain available; growth will return when the history file can be loaded.' : growthRange === 'daily' ? 'The first daily increase appears after the next snapshot.' : 'Weekly increases appear after seven days of snapshots.'}</span>
                 </div>
-              : growthSeries.map((point, index) => (
-                <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} new ${hasAssetBreakdown ? 'tracked downloads' : 'downloads'}`}>
+              : growthSeries.map((point, index) => {
+                const primaryDownloads = point.assets?.[primaryAsset.id] ?? 0;
+                const secondaryDownloads = secondaryAsset ? point.assets?.[secondaryAsset.id] ?? 0 : 0;
+                const showAssetStack = hasAssetBreakdown && secondaryAsset && primaryDownloads >= 0 && secondaryDownloads >= 0;
+                return (
+                <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} new ${hasAssetBreakdown ? `tracked downloads, ${primaryDownloads} ${primaryAsset.label}, ${secondaryDownloads} ${secondaryAsset?.label}` : 'downloads'}`}>
                   <span className="velocity-value">{formatSignedNumber(point.value)}</span>
-                  <span className="velocity-track"><i style={{ height: `${Math.max((Math.abs(point.value) / maxGrowth) * 100, 5)}%` }} /></span>
+                  <span className="velocity-track">
+                    {showAssetStack
+                      ? <span className="velocity-stack" style={{ height: `${Math.max((Math.abs(point.value) / maxGrowth) * 100, point.value ? 5 : 0)}%` }}>
+                          {secondaryDownloads > 0 && <i className="bar-segment asset-secondary" style={{ flexGrow: secondaryDownloads }} />}
+                          {primaryDownloads > 0 && <i className="bar-segment asset-primary" style={{ flexGrow: primaryDownloads }} />}
+                        </span>
+                      : <i className="velocity-fill" style={{ height: `${Math.max((Math.abs(point.value) / maxGrowth) * 100, point.value ? 5 : 0)}%` }} />}
+                  </span>
                   <span className="velocity-label">{index % 2 === 0 || index === growthSeries.length - 1 ? point.label : ''}</span>
                 </div>
-              ))}
+                );
+              })}
           </div>
           <aside className="growth-summary" aria-live="polite">
             <span>Latest {growthRange === 'daily' ? '24 hours' : '7 days'}</span>
             <strong>{latestGrowth ? formatSignedNumber(latestGrowth.value) : '—'}</strong>
             <small>new {hasAssetBreakdown ? 'tracked downloads' : 'downloads'}</small>
+            {latestGrowth?.assets && hasAssetBreakdown && secondaryAsset && (
+              <div className="growth-asset-totals">
+                <span><i className="asset-primary" />{primaryAsset.label} {formatSignedNumber(latestGrowth.assets[primaryAsset.id] ?? 0)}</span>
+                <span><i className="asset-secondary" />{secondaryAsset.label} {formatSignedNumber(latestGrowth.assets[secondaryAsset.id] ?? 0)}</span>
+              </div>
+            )}
             <div className={`growth-comparison${growthComparison !== null && growthComparison < 0 ? ' is-down' : ''}`}>
               {growthComparison === null ? 'Waiting for a prior period' : `${formatGrowthPercentage(growthComparison)} vs prior period`}
             </div>
@@ -952,6 +1004,7 @@ export default function Home() {
             <div>
               <p className="eyebrow">Release performance</p>
               <h2 id="release-performance-title">Release downloads by version</h2>
+              {hasAssetBreakdown && secondaryAsset && <AssetLegend assets={[primaryAsset, secondaryAsset]} />}
             </div>
             <div className="segmented-control" aria-label="Chart range">
               <button className={range === 'recent' ? 'active' : ''} onClick={() => setRange('recent')} type="button">Recent 5</button>
@@ -998,11 +1051,18 @@ export default function Home() {
               {!summary && <div className={`data-placeholder${isInitialLoad ? ' is-loading' : ''}`}>{emptyNote}</div>}
               {chartReleases.map((release) => {
                 const isLatest = release.version === releaseComparison?.latest.version;
+                const primaryDownloads = release.assets?.[primaryAsset.id]?.downloads ?? 0;
+                const secondaryDownloads = secondaryAsset ? release.assets?.[secondaryAsset.id]?.downloads ?? 0 : 0;
                 return (
-                <a className={`bar-column${isLatest ? ' is-latest' : ''}`} href={release.url} target="_blank" rel="noreferrer" key={release.version} aria-label={`${release.version}: ${release.downloads} downloads${isLatest && releaseComparison ? `, ${formatReleaseAge(releaseComparison.ageDays).toLowerCase()}` : ''}`}>
+                <a className={`bar-column${isLatest ? ' is-latest' : ''}`} href={release.url} target="_blank" rel="noreferrer" key={release.version} aria-label={`${release.version}: ${release.downloads} downloads${hasAssetBreakdown && secondaryAsset ? `, ${primaryDownloads} ${primaryAsset.label}, ${secondaryDownloads} ${secondaryAsset.label}` : ''}${isLatest && releaseComparison ? `, ${formatReleaseAge(releaseComparison.ageDays).toLowerCase()}` : ''}`}>
                   <span className="bar-value">{release.downloads || '–'}</span>
                   <div className="bar-track">
-                    <span style={{ height: `${Math.max((release.downloads / maxDownloads) * 100, release.downloads ? 7 : 0)}%` }} />
+                    {hasAssetBreakdown && secondaryAsset
+                      ? <span className="bar-stack" style={{ height: `${Math.max((release.downloads / maxDownloads) * 100, release.downloads ? 7 : 0)}%` }}>
+                          {secondaryDownloads > 0 && <i className="bar-segment asset-secondary" style={{ flexGrow: secondaryDownloads }} />}
+                          {primaryDownloads > 0 && <i className="bar-segment asset-primary" style={{ flexGrow: primaryDownloads }} />}
+                        </span>
+                      : <span className="bar-fill" style={{ height: `${Math.max((release.downloads / maxDownloads) * 100, release.downloads ? 7 : 0)}%` }} />}
                   </div>
                   <span className={`bar-label${isLatest ? ' is-latest' : ''}`}>{release.version}</span>
                 </a>
@@ -1010,7 +1070,7 @@ export default function Home() {
               })}
             </div>
           </div>
-          <p className="chart-caption">New releases may need time to catch up. Select a bar to open it on GitHub.</p>
+          <p className="chart-caption">{hasAssetBreakdown ? 'Stacked bars separate each tracked asset. ' : ''}New releases may need time to catch up. Select a bar to open it on GitHub.</p>
         </article>
 
         <aside className="panel insight-card" aria-labelledby="distribution-title">
