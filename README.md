@@ -6,7 +6,7 @@
 
 A fast, privacy-friendly dashboard for exploring GitHub release-asset downloads across Home Assistant and ESPHome projects.
 
-HACS Download Analytics turns the download counters exposed by GitHub Releases into a clear, responsive overview of total downloads, daily and weekly growth, distribution, and per-version performance. The site remains fully static: no database or always-on backend is required. A scheduled GitHub Action records one compact history snapshot per day.
+HACS Download Analytics turns the download counters exposed by GitHub Releases into a clear, responsive overview of total downloads, daily and weekly growth, distribution, and per-version performance. Projects can track either one release asset or a labeled pair, with combined totals and separate asset-level results shown in the same dashboard. The site remains fully static: no database or always-on backend is required. A scheduled GitHub Action records one compact history snapshot per day.
 
 [View the live dashboard](https://thomasgregg.github.io/hacs-downloads/) · [Report an issue](https://github.com/thomasgregg/hacs-downloads/issues)
 
@@ -15,12 +15,13 @@ HACS Download Analytics turns the download counters exposed by GitHub Releases i
 ## Highlights
 
 - Monitor multiple public GitHub repositories from one dashboard.
-- Track integration `.zip` archives, frontend card `.js` bundles, firmware images, or other release assets with fixed or version-derived filenames, including project-specific multi-asset breakdowns.
-- Review total downloads, recent performance, download share, and individual releases.
+- Track integration `.zip` archives, frontend card `.js` bundles, firmware images, or other release assets with fixed or version-derived filenames.
+- Configure a labeled pair of assets when a project needs separate download counts, such as Factory and OTA firmware images.
+- Review combined totals, asset-level summaries, download share, and individual releases without switching dashboard views.
 - See each selected repository's GitHub star count beside its repository link.
 - Compare 24-hour and 7-day growth for totals, latest releases, leading releases, and active-release averages.
-- Explore daily and weekly download velocity as snapshot history accumulates.
-- Compare the latest release with the strongest earlier version, including release age and progress toward the previous download record.
+- Explore daily and weekly download velocity as snapshot history accumulates, with stacked asset sections for multi-asset projects.
+- Compare the latest release with the strongest earlier version, including release age and progress toward the previous combined download record.
 - Switch projects without reloading and share the selected project through the URL.
 - Cache successful responses locally to reduce GitHub API usage.
 - Preserve cached data and retry automatically when GitHub rate limits are reached.
@@ -28,7 +29,9 @@ HACS Download Analytics turns the download counters exposed by GitHub Releases i
 
 ## How it works
 
-GitHub records a `download_count` for every file uploaded to a release. For each configured project, the dashboard requests up to 100 published releases, selects the configured asset or assets, and aggregates their download counts.
+GitHub records a `download_count` for every file uploaded to a release. For each configured project, the dashboard requests up to 100 published releases, selects the configured asset or assets, and aggregates their download counts. A multi-asset project's total is the sum of both asset counters; the separate values are retained for summary cards, distribution, stacked release and velocity charts, and the release table.
+
+These counters measure asset requests rather than people or installations. If one person downloads both tracked files, GitHub records two downloads and the combined project total increases by two.
 
 ```text
 GitHub Releases API → matching release assets → browser-side aggregation → dashboard
@@ -39,10 +42,10 @@ A repository is compatible when it:
 
 1. Is publicly accessible.
 2. Publishes GitHub releases.
-3. Uploads a dedicated asset to each release.
-4. Uses a consistent, case-sensitive filename or a filename derived from its release tag.
+3. Uploads at least one configured release asset to each relevant release.
+4. Uses consistent, case-sensitive filenames or filenames derived from the release tag.
 
-GitHub's automatically generated source archives are not release assets and do not expose the counter used by this dashboard. Draft releases and releases without the configured asset are ignored.
+GitHub's automatically generated source archives are not release assets and do not expose the counter used by this dashboard. Draft releases and releases without any configured asset are ignored. For a multi-asset project, a release remains visible when only one tracked asset exists; the missing asset is shown as zero.
 
 ## Quick start
 
@@ -114,7 +117,7 @@ Versioned assets can use `{version}`, which is the release tag with one leading
 }
 ```
 
-A project that publishes two meaningful assets can define an `assets` array. The dashboard keeps the existing layout while adding an asset-level summary and table breakdown for that project:
+A project that publishes two meaningful assets can define an `assets` array. The dashboard keeps the existing layout while adding separate summary cards, asset distribution, stacked release and velocity bars, and table columns for that project. The combined total remains visible throughout:
 
 ```json
 {
@@ -195,9 +198,11 @@ Use `/` for a user or organization site served from the domain root.
 
 ## Download history, caching, and API limits
 
-`public/download-history.json` keeps up to 400 days of daily snapshots. Each snapshot stores the total and per-release counters for every configured project. The dashboard calculates 24-hour and 7-day changes from snapshots taken at approximately the same UTC time.
+`public/download-history.json` keeps up to 400 days of daily snapshots. Each snapshot stores the total and per-release counters for every configured project. Multi-asset snapshots additionally store totals by asset and asset counters by release so growth and velocity can use the same breakdown as the live dashboard. The dashboard calculates 24-hour and 7-day changes from snapshots taken at approximately the same UTC time.
 
 The first snapshot establishes the baseline. Daily changes become available after the second snapshot, weekly changes after seven days, and period comparisons after two complete periods. Missing intervals are shown as collecting rather than estimated.
+
+When an existing project changes from one tracked asset to a labeled pair, older snapshots do not contain a compatible asset breakdown and are intentionally excluded from the new growth calculation. The first multi-asset snapshot establishes a fresh baseline; stacked velocity appears after a compatible comparison snapshot is available.
 
 The dashboard uses GitHub's unauthenticated public API for release assets and public repository metadata such as the star count. Each project's most recent successful response is stored in `localStorage` and reused for five minutes. If GitHub's rate limit is reached, cached data remains visible and the dashboard retries after the reset time reported by GitHub.
 
@@ -209,6 +214,7 @@ For a high-traffic deployment, use a server-side proxy with appropriate authenti
 - Each project tracks either one release asset or a configured pair of labeled release assets.
 - The dashboard reads the first 100 releases returned by GitHub.
 - Counts represent GitHub release-asset downloads, not unique users or confirmed installations; downloads served elsewhere are excluded.
+- Multi-asset totals add the tracked asset counters together, so downloading both assets produces two counted downloads rather than one installation.
 - Live totals can be newer than the most recent daily growth snapshot.
 - Replacing or deleting a release asset can produce a negative interval because GitHub resets or removes that asset's cumulative counter.
 
