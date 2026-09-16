@@ -49,7 +49,18 @@
     "name": "SaltWatch Firmware",
     "owner": "thomasgregg",
     "repo": "saltwatch",
-    "assetNameTemplate": "saltwatch-{version}.factory.bin",
+    "assets": [
+      {
+        "id": "factory",
+        "label": "Factory image",
+        "assetNameTemplate": "saltwatch-{version}.factory.bin"
+      },
+      {
+        "id": "ota",
+        "label": "OTA image",
+        "assetNameTemplate": "saltwatch-{version}.ota.bin"
+      }
+    ],
     "mark": "SF",
     "description": "the SaltWatch ESPHome firmware"
   },

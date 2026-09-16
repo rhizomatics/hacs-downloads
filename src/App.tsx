@@ -23,11 +23,19 @@ import projectConfigs from './projects.json';
 import { formatGitHubStarCount, parseGitHubStarCount } from './github';
 import { buildReleaseComparison, formatReleaseAge } from './releaseComparison';
 
-type ProjectAsset =
+type AssetMatcher =
   | { assetName: string; assetNameTemplate?: never }
   | { assetName?: never; assetNameTemplate: string };
 
-type ProjectConfig = ProjectAsset & {
+type TrackedAssetConfig = AssetMatcher & {
+  id: string;
+  label: string;
+};
+
+type ProjectAsset = AssetMatcher & { assets?: never };
+type ProjectAssets = { assetName?: never; assetNameTemplate?: never; assets: [TrackedAssetConfig, TrackedAssetConfig] };
+
+type ProjectConfig = (ProjectAsset | ProjectAssets) & {
   id: string;
   name: string;
   owner: string;
@@ -42,6 +50,10 @@ type ReleaseMetric = {
   publishedAt: string;
   size: number;
   url: string;
+  assets?: Record<string, {
+    downloads: number;
+    size: number;
+  }>;
 };
 
 type GitHubRelease = {
@@ -69,6 +81,8 @@ type DashboardSnapshot = {
 type HistoryProjectSnapshot = {
   total: number;
   releases: Record<string, number>;
+  assets?: Record<string, number>;
+  releaseAssets?: Record<string, Record<string, number>>;
 };
 
 type HistorySnapshot = {
@@ -110,15 +124,27 @@ function getProject(projectId: string) {
   return PROJECTS.find((candidate) => candidate.id === projectId) ?? PROJECTS[0];
 }
 
-function resolveAssetName(project: ProjectConfig, tag: string) {
-  if (project.assetName !== undefined) return project.assetName;
+function resolveAssetName(asset: AssetMatcher, tag: string) {
+  if (asset.assetName !== undefined) return asset.assetName;
   const version = tag.replace(/^v/i, '');
-  return project.assetNameTemplate
+  return asset.assetNameTemplate
     .replaceAll('{tag}', tag)
     .replaceAll('{version}', version);
 }
 
+function projectAssets(project: ProjectConfig): TrackedAssetConfig[] {
+  if (project.assets) return project.assets;
+  return [{
+    id: 'release',
+    label: 'Release asset',
+    ...(project.assetName !== undefined
+      ? { assetName: project.assetName }
+      : { assetNameTemplate: project.assetNameTemplate }),
+  }];
+}
+
 function displayAssetName(project: ProjectConfig) {
+  if (project.assets) return `${project.assets.length} tracked assets`;
   return project.assetName ?? project.assetNameTemplate;
 }
 
@@ -135,7 +161,7 @@ function getInitialProjectId() {
 }
 
 function snapshotCacheKey(projectId: string) {
-  return `hacs-downloads-snapshot-${projectId}-v1`;
+  return `hacs-downloads-snapshot-${projectId}-v2`;
 }
 
 function readRateLimitReset(): number | null {
@@ -162,6 +188,14 @@ function readCachedSnapshot(projectId: string): DashboardSnapshot | null {
       && typeof release.publishedAt === 'string'
       && typeof release.size === 'number'
       && typeof release.url === 'string'
+      && (release.assets === undefined || (
+        release.assets !== null
+        && typeof release.assets === 'object'
+        && Object.values(release.assets).every((asset) => (
+          typeof asset.downloads === 'number'
+          && typeof asset.size === 'number'
+        ))
+      ))
     ));
     return isValid ? snapshot : null;
   } catch {
@@ -258,10 +292,17 @@ function calculateMetricGrowth(
   };
 }
 
-function buildGrowthSeries(history: DownloadHistory | null, projectId: string, period: 'daily' | 'weekly'): GrowthSeriesPoint[] {
+function buildGrowthSeries(
+  history: DownloadHistory | null,
+  projectId: string,
+  period: 'daily' | 'weekly',
+  getValue: (snapshot: HistoryProjectSnapshot) => number,
+): GrowthSeriesPoint[] {
   const points = (history?.snapshots ?? []).flatMap((snapshot) => {
     const projectSnapshot = snapshot.projects[projectId];
-    return projectSnapshot ? [{ capturedAt: snapshot.capturedAt, total: projectSnapshot.total }] : [];
+    if (!projectSnapshot) return [];
+    const total = getValue(projectSnapshot);
+    return Number.isFinite(total) ? [{ capturedAt: snapshot.capturedAt, total }] : [];
   }).sort((a, b) => Date.parse(a.capturedAt) - Date.parse(b.capturedAt));
   if (points.length < 2) return [];
 
@@ -548,16 +589,23 @@ export default function Home() {
       const payload = await response.json() as GitHubRelease[];
       const repositoryPayload: unknown = repositoryResponse.ok ? await repositoryResponse.json() as GitHubRepository : null;
       const stars = parseGitHubStarCount(repositoryPayload) ?? cachedSnapshot?.stars;
+      const trackedAssets = projectAssets(project);
       const metrics = payload.flatMap((release) => {
-        const expectedAssetName = resolveAssetName(project, release.tag_name);
-        const asset = release.assets.find((candidate) => candidate.name === expectedAssetName);
-        if (!asset || release.draft || !release.published_at) return [];
+        if (release.draft || !release.published_at) return [];
+        const matchedAssets = trackedAssets.flatMap((trackedAsset) => {
+          const expectedAssetName = resolveAssetName(trackedAsset, release.tag_name);
+          const asset = release.assets.find((candidate) => candidate.name === expectedAssetName);
+          return asset ? [[trackedAsset.id, { downloads: asset.download_count, size: asset.size }] as const] : [];
+        });
+        if (matchedAssets.length === 0) return [];
+        const assets = Object.fromEntries(matchedAssets);
         return [{
           version: release.tag_name,
-          downloads: asset.download_count,
+          downloads: Object.values(assets).reduce((sum, asset) => sum + asset.downloads, 0),
           publishedAt: release.published_at,
-          size: asset.size,
+          size: Object.values(assets).reduce((sum, asset) => sum + asset.size, 0),
           url: release.html_url,
+          ...(project.assets ? { assets } : {}),
         }];
       }).sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
       if (metrics.length === 0) throw new Error('No tracked assets found');
@@ -660,6 +708,12 @@ export default function Home() {
   };
 
   const releases = snapshot?.releases ?? [];
+  const trackedAssets = useMemo(() => projectAssets(project), [project]);
+  const hasAssetBreakdown = project.assets !== undefined;
+  const assetTotals = useMemo(() => Object.fromEntries(trackedAssets.map((asset) => [
+    asset.id,
+    releases.reduce((sum, release) => sum + (release.assets?.[asset.id]?.downloads ?? 0), 0),
+  ])), [releases, trackedAssets]);
 
   const summary = useMemo(() => {
     if (!releases.length) return null;
@@ -677,19 +731,51 @@ export default function Home() {
 
   const metricGrowth = useMemo(() => {
     if (!summary) return null;
+    const snapshotTotal = (projectSnapshot: HistoryProjectSnapshot) => {
+      if (!hasAssetBreakdown) return projectSnapshot.total;
+      if (!projectSnapshot.assets) return Number.NaN;
+      return trackedAssets.reduce((sum, asset) => sum + (projectSnapshot.assets?.[asset.id] ?? 0), 0);
+    };
+    const snapshotReleaseTotal = (projectSnapshot: HistoryProjectSnapshot, version: string) => {
+      if (!hasAssetBreakdown) return projectSnapshot.releases[version] ?? 0;
+      const releaseAssets = projectSnapshot.releaseAssets?.[version];
+      if (!releaseAssets) return Number.NaN;
+      return trackedAssets.reduce((sum, asset) => sum + (releaseAssets[asset.id] ?? 0), 0);
+    };
     const activeReleaseAverage = (projectSnapshot: HistoryProjectSnapshot) => {
-      const downloadedReleases = Object.values(projectSnapshot.releases).filter((downloads) => downloads > 0);
-      return downloadedReleases.length ? Math.round(projectSnapshot.total / downloadedReleases.length) : 0;
+      if (!hasAssetBreakdown) {
+        const downloadedReleases = Object.values(projectSnapshot.releases).filter((downloads) => downloads > 0);
+        return downloadedReleases.length ? Math.round(projectSnapshot.total / downloadedReleases.length) : 0;
+      }
+      if (!projectSnapshot.releaseAssets) return Number.NaN;
+      const downloadedReleases = Object.values(projectSnapshot.releaseAssets)
+        .map((releaseAssets) => trackedAssets.reduce((sum, asset) => sum + (releaseAssets[asset.id] ?? 0), 0))
+        .filter((downloads) => downloads > 0);
+      const total = downloadedReleases.reduce((sum, downloads) => sum + downloads, 0);
+      return downloadedReleases.length ? Math.round(total / downloadedReleases.length) : 0;
     };
     return {
-      total: calculateMetricGrowth(history, project.id, (projectSnapshot) => projectSnapshot.total),
-      latest: calculateMetricGrowth(history, project.id, (projectSnapshot) => projectSnapshot.releases[summary.latest.version] ?? 0),
-      leader: calculateMetricGrowth(history, project.id, (projectSnapshot) => projectSnapshot.releases[summary.leader.version] ?? 0),
+      total: calculateMetricGrowth(history, project.id, snapshotTotal),
+      latest: calculateMetricGrowth(history, project.id, (projectSnapshot) => snapshotReleaseTotal(projectSnapshot, summary.latest.version)),
+      leader: calculateMetricGrowth(history, project.id, (projectSnapshot) => snapshotReleaseTotal(projectSnapshot, summary.leader.version)),
       average: calculateMetricGrowth(history, project.id, activeReleaseAverage),
+      assets: Object.fromEntries(trackedAssets.map((asset) => [
+        asset.id,
+        calculateMetricGrowth(history, project.id, (projectSnapshot) => projectSnapshot.assets?.[asset.id] ?? Number.NaN),
+      ])),
     };
-  }, [history, project.id, summary]);
+  }, [hasAssetBreakdown, history, project.id, summary, trackedAssets]);
 
-  const growthSeries = useMemo(() => buildGrowthSeries(history, project.id, growthRange), [growthRange, history, project.id]);
+  const growthSeries = useMemo(() => buildGrowthSeries(
+    history,
+    project.id,
+    growthRange,
+    (projectSnapshot) => {
+      if (!hasAssetBreakdown) return projectSnapshot.total;
+      if (!projectSnapshot.assets) return Number.NaN;
+      return trackedAssets.reduce((sum, asset) => sum + (projectSnapshot.assets?.[asset.id] ?? 0), 0);
+    },
+  ), [growthRange, hasAssetBreakdown, history, project.id, trackedAssets]);
   const maxGrowth = Math.max(1, ...growthSeries.map((point) => Math.abs(point.value)));
   const latestGrowth = growthSeries.at(-1) ?? null;
   const previousGrowth = growthSeries.at(-2) ?? null;
@@ -730,6 +816,11 @@ export default function Home() {
   const repositoryUrl = `https://github.com/${project.owner}/${project.repo}`;
   const stargazersUrl = `${repositoryUrl}/stargazers`;
   const stars = snapshot?.stars;
+  const primaryAsset = trackedAssets[0];
+  const secondaryAsset = trackedAssets[1];
+  const primaryAssetDownloads = assetTotals[primaryAsset.id] ?? 0;
+  const secondaryAssetDownloads = secondaryAsset ? assetTotals[secondaryAsset.id] ?? 0 : 0;
+  const primaryAssetShare = summary?.total ? Math.round((primaryAssetDownloads / summary.total) * 100) : 0;
 
   return (
     <main className="dashboard-shell" id="top">
@@ -799,10 +890,17 @@ export default function Home() {
       </section>
 
       <section className="stats-grid" aria-label={`${project.name} release download summary`}>
-        <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Release downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
-        <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.latest} label="Latest release" value={summary ? formatNumber(summary.latest.downloads) : '—'} icon={<Activity size={18} />} note={summary ? <><span className="version-chip">{summary.latest.version}</span> asset downloads</> : emptyNote} />
-        <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.leader} label="Most downloaded" value={summary ? formatNumber(summary.leader.downloads) : '—'} icon={<TrendingUp size={18} />} note={summary ? <><span className="version-chip">{summary.leader.version}</span> · {summary.leaderShare}% of total</> : emptyNote} />
-        <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.average} label="Active-release avg." value={summary ? formatNumber(summary.average) : '—'} icon={<BarChart3 size={18} />} note={summary ? <>Average among downloaded versions</> : emptyNote} />
+        {hasAssetBreakdown && secondaryAsset ? <>
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Tracked downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.assets[primaryAsset.id]} label={`${primaryAsset.label} downloads`} value={summary ? formatNumber(assetTotals[primaryAsset.id] ?? 0) : '—'} icon={<Package size={18} />} note={summary ? <>GitHub release asset requests</> : emptyNote} />
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.assets[secondaryAsset.id]} label={`${secondaryAsset.label} downloads`} value={summary ? formatNumber(assetTotals[secondaryAsset.id] ?? 0) : '—'} icon={<RefreshCw size={18} />} note={summary ? <>GitHub release asset requests</> : emptyNote} />
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.latest} label="Latest release" value={summary ? formatNumber(summary.latest.downloads) : '—'} icon={<Activity size={18} />} note={summary ? <><span className="version-chip">{summary.latest.version}</span> tracked downloads</> : emptyNote} />
+        </> : <>
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Release downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.latest} label="Latest release" value={summary ? formatNumber(summary.latest.downloads) : '—'} icon={<Activity size={18} />} note={summary ? <><span className="version-chip">{summary.latest.version}</span> asset downloads</> : emptyNote} />
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.leader} label="Most downloaded" value={summary ? formatNumber(summary.leader.downloads) : '—'} icon={<TrendingUp size={18} />} note={summary ? <><span className="version-chip">{summary.leader.version}</span> · {summary.leaderShare}% of total</> : emptyNote} />
+          <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.average} label="Active-release avg." value={summary ? formatNumber(summary.average) : '—'} icon={<BarChart3 size={18} />} note={summary ? <>Average among downloaded versions</> : emptyNote} />
+        </>}
       </section>
 
       <section className="panel growth-panel" aria-labelledby="growth-title">
@@ -820,7 +918,7 @@ export default function Home() {
           <div
             className="velocity-chart"
             role="img"
-            aria-label={`${growthRange === 'daily' ? 'Daily' : 'Weekly'} new downloads for ${project.name}`}
+            aria-label={`${growthRange === 'daily' ? 'Daily' : 'Weekly'} new ${hasAssetBreakdown ? 'tracked downloads' : 'downloads'} for ${project.name}`}
           >
             {growthSeries.length === 0
               ? <div className="growth-placeholder">
@@ -829,7 +927,7 @@ export default function Home() {
                   <span>{historyStatus === 'error' ? 'Live totals remain available; growth will return when the history file can be loaded.' : growthRange === 'daily' ? 'The first daily increase appears after the next snapshot.' : 'Weekly increases appear after seven days of snapshots.'}</span>
                 </div>
               : growthSeries.map((point, index) => (
-                <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} new downloads`}>
+                <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} new ${hasAssetBreakdown ? 'tracked downloads' : 'downloads'}`}>
                   <span className="velocity-value">{formatSignedNumber(point.value)}</span>
                   <span className="velocity-track"><i style={{ height: `${Math.max((Math.abs(point.value) / maxGrowth) * 100, 5)}%` }} /></span>
                   <span className="velocity-label">{index % 2 === 0 || index === growthSeries.length - 1 ? point.label : ''}</span>
@@ -839,7 +937,7 @@ export default function Home() {
           <aside className="growth-summary" aria-live="polite">
             <span>Latest {growthRange === 'daily' ? '24 hours' : '7 days'}</span>
             <strong>{latestGrowth ? formatSignedNumber(latestGrowth.value) : '—'}</strong>
-            <small>new downloads</small>
+            <small>new {hasAssetBreakdown ? 'tracked downloads' : 'downloads'}</small>
             <div className={`growth-comparison${growthComparison !== null && growthComparison < 0 ? ' is-down' : ''}`}>
               {growthComparison === null ? 'Waiting for a prior period' : `${formatGrowthPercentage(growthComparison)} vs prior period`}
             </div>
@@ -919,11 +1017,29 @@ export default function Home() {
           <div className="card-heading compact">
             <div>
               <p className="eyebrow">Distribution</p>
-              <h2 id="distribution-title">Release download share</h2>
+              <h2 id="distribution-title">{hasAssetBreakdown ? 'Asset download share' : 'Release download share'}</h2>
             </div>
             <Package size={18} aria-hidden="true" />
           </div>
-          {summary ? <>
+          {summary && hasAssetBreakdown && secondaryAsset ? <>
+            <div className="donut-wrap">
+              <div className="donut" style={{ '--share': `${primaryAssetShare * 3.6}deg` } as CSSProperties}>
+                <div><strong>{primaryAssetShare}%</strong><span>{primaryAsset.label.toLowerCase()}s</span></div>
+              </div>
+            </div>
+            <div className="leader-row">
+              <span><i /> {primaryAsset.label}s</span>
+              <strong>{formatNumber(primaryAssetDownloads)}</strong>
+            </div>
+            <div className="leader-row secondary">
+              <span><i /> {secondaryAsset.label}s</span>
+              <strong>{formatNumber(secondaryAssetDownloads)}</strong>
+            </div>
+            <div className="insight-note">
+              <TrendingUp size={16} />
+              <p><strong>{primaryAsset.label} downloads</strong> account for {primaryAssetShare}% of tracked download activity.</p>
+            </div>
+          </> : summary ? <>
             <div className="donut-wrap">
               <div className="donut" style={{ '--share': `${summary.leaderShare * 3.6}deg` } as CSSProperties}>
                 <div><strong>{summary.leaderShare}%</strong><span>top version</span></div>
@@ -955,32 +1071,55 @@ export default function Home() {
         </div>
         <div className="table-scroll">
           <table>
-            <thead>
-              <tr><th>Version</th><th>Published</th><th>Asset size</th><th>Share</th><th className="align-right">Release downloads</th><th><span className="sr-only">Open</span></th></tr>
-            </thead>
-            <tbody>
-              {!summary && <tr className="empty-row"><td colSpan={6}>{emptyNote}</td></tr>}
-              {releases.map((release, index) => {
-                const share = summary?.total ? Math.round((release.downloads / summary.total) * 100) : 0;
-                return (
-                  <tr key={release.version}>
-                    <td><span className="release-version">{release.version}</span>{index === 0 && <span className="latest-tag">Latest</span>}</td>
-                    <td><span className="date-cell"><CalendarDays size={14} /> {formatDate(release.publishedAt)}</span></td>
-                    <td>{Math.round(release.size / 1024)} KB</td>
-                    <td><span className="share-cell"><i><b style={{ width: `${share}%` }} /></i>{share}%</span></td>
-                    <td className="align-right"><strong className="download-count">{formatNumber(release.downloads)}</strong></td>
-                    <td><a className="row-link" href={release.url} target="_blank" rel="noreferrer" aria-label={`Open ${release.version} release`}><ExternalLink size={14} /></a></td>
-                  </tr>
-                );
-              })}
-            </tbody>
+            {hasAssetBreakdown && secondaryAsset ? <>
+              <thead>
+                <tr><th>Version</th><th>Published</th><th className="align-right">{primaryAsset.label} downloads</th><th className="align-right">{secondaryAsset.label} downloads</th><th>Share</th><th className="align-right">Release downloads</th><th><span className="sr-only">Open</span></th></tr>
+              </thead>
+              <tbody>
+                {!summary && <tr className="empty-row"><td colSpan={7}>{emptyNote}</td></tr>}
+                {releases.map((release, index) => {
+                  const share = summary?.total ? Math.round((release.downloads / summary.total) * 100) : 0;
+                  return (
+                    <tr key={release.version}>
+                      <td><span className="release-version">{release.version}</span>{index === 0 && <span className="latest-tag">Latest</span>}</td>
+                      <td><span className="date-cell"><CalendarDays size={14} /> {formatDate(release.publishedAt)}</span></td>
+                      <td className="align-right"><strong className="download-count">{formatNumber(release.assets?.[primaryAsset.id]?.downloads ?? 0)}</strong></td>
+                      <td className="align-right"><strong className="download-count">{formatNumber(release.assets?.[secondaryAsset.id]?.downloads ?? 0)}</strong></td>
+                      <td><span className="share-cell"><i><b style={{ width: `${share}%` }} /></i>{share}%</span></td>
+                      <td className="align-right"><strong className="download-count">{formatNumber(release.downloads)}</strong></td>
+                      <td><a className="row-link" href={release.url} target="_blank" rel="noreferrer" aria-label={`Open ${release.version} release`}><ExternalLink size={14} /></a></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </> : <>
+              <thead>
+                <tr><th>Version</th><th>Published</th><th>Asset size</th><th>Share</th><th className="align-right">Release downloads</th><th><span className="sr-only">Open</span></th></tr>
+              </thead>
+              <tbody>
+                {!summary && <tr className="empty-row"><td colSpan={6}>{emptyNote}</td></tr>}
+                {releases.map((release, index) => {
+                  const share = summary?.total ? Math.round((release.downloads / summary.total) * 100) : 0;
+                  return (
+                    <tr key={release.version}>
+                      <td><span className="release-version">{release.version}</span>{index === 0 && <span className="latest-tag">Latest</span>}</td>
+                      <td><span className="date-cell"><CalendarDays size={14} /> {formatDate(release.publishedAt)}</span></td>
+                      <td>{Math.round(release.size / 1024)} KB</td>
+                      <td><span className="share-cell"><i><b style={{ width: `${share}%` }} /></i>{share}%</span></td>
+                      <td className="align-right"><strong className="download-count">{formatNumber(release.downloads)}</strong></td>
+                      <td><a className="row-link" href={release.url} target="_blank" rel="noreferrer" aria-label={`Open ${release.version} release`}><ExternalLink size={14} /></a></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </>}
           </table>
         </div>
       </section>
 
       <section className="method-card">
         <Info size={18} aria-hidden="true" />
-        <div><strong>What this measures</strong><p>GitHub counts requests for the tracked release asset. These figures are release downloads, not unique users or confirmed installations, and they exclude files served through other channels.</p></div>
+        <div><strong>What this measures</strong><p>GitHub counts requests for the tracked release {hasAssetBreakdown ? 'assets' : 'asset'}. These figures are downloads, not unique users or confirmed installations, and they exclude files served through other channels.</p></div>
         <a href="https://docs.github.com/en/rest/releases/assets#about-release-assets" target="_blank" rel="noreferrer">Methodology <ExternalLink size={12} /></a>
       </section>
 

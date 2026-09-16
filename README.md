@@ -15,7 +15,7 @@ HACS Download Analytics turns the download counters exposed by GitHub Releases i
 ## Highlights
 
 - Monitor multiple public GitHub repositories from one dashboard.
-- Track integration `.zip` archives, frontend card `.js` bundles, firmware images, or other release assets with fixed or version-derived filenames.
+- Track integration `.zip` archives, frontend card `.js` bundles, firmware images, or other release assets with fixed or version-derived filenames, including project-specific multi-asset breakdowns.
 - Review total downloads, recent performance, download share, and individual releases.
 - See each selected repository's GitHub star count beside its repository link.
 - Compare 24-hour and 7-day growth for totals, latest releases, leading releases, and active-release averages.
@@ -28,7 +28,7 @@ HACS Download Analytics turns the download counters exposed by GitHub Releases i
 
 ## How it works
 
-GitHub records a `download_count` for every file uploaded to a release. For each configured project, the dashboard requests up to 100 published releases, selects the asset whose filename matches either `assetName` or the version-aware `assetNameTemplate`, and aggregates its download count.
+GitHub records a `download_count` for every file uploaded to a release. For each configured project, the dashboard requests up to 100 published releases, selects the configured asset or assets, and aggregates their download counts.
 
 ```text
 GitHub Releases API → matching release assets → browser-side aggregation → dashboard
@@ -71,7 +71,7 @@ The optimized site is written to `dist/`.
 
 ## Configure projects
 
-Projects are defined in [`src/projects.json`](src/projects.json). The dashboard and history collector share this file, so each repository only needs to be configured once. Each entry connects one GitHub repository to one release asset:
+Projects are defined in [`src/projects.json`](src/projects.json). The dashboard and history collector share this file, so each repository only needs to be configured once. A standard entry connects one GitHub repository to one release asset:
 
 ```json
 {
@@ -114,6 +114,31 @@ Versioned assets can use `{version}`, which is the release tag with one leading
 }
 ```
 
+A project that publishes two meaningful assets can define an `assets` array. The dashboard keeps the existing layout while adding an asset-level summary and table breakdown for that project:
+
+```json
+{
+  "id": "example-firmware",
+  "name": "Example Firmware",
+  "owner": "github-owner",
+  "repo": "example-firmware",
+  "assets": [
+    {
+      "id": "factory",
+      "label": "Factory image",
+      "assetNameTemplate": "example-{version}.factory.bin"
+    },
+    {
+      "id": "ota",
+      "label": "OTA image",
+      "assetNameTemplate": "example-{version}.ota.bin"
+    }
+  ],
+  "mark": "EF",
+  "description": "the Example firmware"
+}
+```
+
 | Field | Description |
 | --- | --- |
 | `id` | Unique, URL-safe identifier used in links and browser cache keys. |
@@ -122,6 +147,7 @@ Versioned assets can use `{version}`, which is the release tag with one leading
 | `repo` | Repository name without the owner or URL. |
 | `assetName` | Exact, case-sensitive filename of the release asset to count. Use this or `assetNameTemplate`. |
 | `assetNameTemplate` | Case-sensitive filename template supporting `{version}` and `{tag}`. Use this or `assetName`. |
+| `assets` | Optional two-item array of labeled release assets to count together and break down separately. Each item needs a unique `id`, a `label`, and either `assetName` or `assetNameTemplate`. |
 | `mark` | Short initials displayed in the project mark. |
 | `description` | Project description used in page metadata. |
 
@@ -180,7 +206,7 @@ For a high-traffic deployment, use a server-side proxy with appropriate authenti
 ## Limitations
 
 - Only public repositories are supported by the client-side implementation.
-- Each project tracks one exact asset filename or one filename template based on the release tag.
+- Each project tracks either one release asset or a configured pair of labeled release assets.
 - The dashboard reads the first 100 releases returned by GitHub.
 - Counts represent GitHub release-asset downloads, not unique users or confirmed installations; downloads served elsewhere are excluded.
 - Live totals can be newer than the most recent daily growth snapshot.
