@@ -8,12 +8,21 @@ const historyPath = path.join(projectRoot, 'public', 'download-history.json');
 const githubApiVersion = '2022-11-28';
 const retentionDays = 400;
 
-function resolveAssetName(project, tag) {
-  if (project.assetName) return project.assetName;
+function resolveAssetName(asset, tag) {
+  if (asset.assetName) return asset.assetName;
   const version = tag.replace(/^v/i, '');
-  return project.assetNameTemplate
+  return asset.assetNameTemplate
     .replaceAll('{tag}', tag)
     .replaceAll('{version}', version);
+}
+
+function projectAssets(project) {
+  if (project.assets) return project.assets;
+  return [{
+    id: 'release',
+    label: 'Release asset',
+    ...(project.assetName ? { assetName: project.assetName } : { assetNameTemplate: project.assetNameTemplate }),
+  }];
 }
 
 function buildHeaders(token) {
@@ -37,16 +46,33 @@ async function fetchReleaseStats(project) {
   if (!response.ok) throw new Error(`${project.owner}/${project.repo}: GitHub returned ${response.status}`);
 
   const payload = await response.json();
-  const releases = Object.fromEntries(payload.flatMap((release) => {
+  const trackedAssets = projectAssets(project);
+  const releaseEntries = payload.flatMap((release) => {
     if (release.draft || !release.published_at) return [];
-    const expectedAssetName = resolveAssetName(project, release.tag_name);
-    const asset = release.assets.find((candidate) => candidate.name === expectedAssetName);
-    return asset ? [[release.tag_name, asset.download_count]] : [];
-  }));
+    const assets = Object.fromEntries(trackedAssets.flatMap((trackedAsset) => {
+      const expectedAssetName = resolveAssetName(trackedAsset, release.tag_name);
+      const asset = release.assets.find((candidate) => candidate.name === expectedAssetName);
+      return asset ? [[trackedAsset.id, asset.download_count]] : [];
+    }));
+    if (Object.keys(assets).length === 0) return [];
+    return [[release.tag_name, {
+      assets,
+      total: Object.values(assets).reduce((sum, downloads) => sum + downloads, 0),
+    }]];
+  });
+  const releases = Object.fromEntries(releaseEntries.map(([tag, release]) => [tag, release.total]));
+  const total = Object.values(releases).reduce((sum, downloads) => sum + downloads, 0);
+
+  if (!project.assets) return { total, releases };
 
   return {
-    total: Object.values(releases).reduce((sum, downloads) => sum + downloads, 0),
+    total,
     releases,
+    assets: Object.fromEntries(trackedAssets.map((asset) => [
+      asset.id,
+      releaseEntries.reduce((sum, [, release]) => sum + (release.assets[asset.id] ?? 0), 0),
+    ])),
+    releaseAssets: Object.fromEntries(releaseEntries.map(([tag, release]) => [tag, release.assets])),
   };
 }
 
