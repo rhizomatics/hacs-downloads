@@ -199,6 +199,7 @@ a { color: inherit; text-decoration: none; }
 .stat-primary .growth-cell.direction-down > small { color: #ffc28f; }
 
 .growth-panel { margin-top: 14px; padding: 25px 28px 24px; }
+.clones-panel { margin: 0 0 14px; }
 .growth-heading { align-items: center; }
 .growth-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 220px; margin-top: 22px; }
 .velocity-chart {

@@ -811,6 +811,41 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="panel growth-panel clones-panel" aria-labelledby="clones-title">
+        <div className="card-heading growth-heading">
+          <div>
+            <p className="eyebrow">Repository activity</p>
+            <h2 id="clones-title">Git clones</h2>
+          </div>
+        </div>
+        <div className="growth-layout">
+          <div className="velocity-chart" role="img" aria-label={`Daily git clones for ${project.name}`}>
+            {cloneSeries.length === 0
+              ? <div className="growth-placeholder">
+                  <GitFork size={18} aria-hidden="true" />
+                  <strong>{historyStatus === 'loading' ? 'Loading clone history…' : historyStatus === 'error' ? 'Clone history is unavailable' : 'Collecting clone history'}</strong>
+                  <span>{historyStatus === 'error' ? 'Live totals remain available; clone data will return when the history file can be loaded.' : 'Clone counts appear once GitHub traffic data has been captured for this repository.'}</span>
+                </div>
+              : cloneSeries.map((point, index) => (
+                <div className="velocity-column" key={point.date} aria-label={`${formatShortDate(point.date)}: ${point.count} clones, ${point.uniques} unique cloners`}>
+                  <span className="velocity-value">{formatNumber(point.count)}</span>
+                  <span className="velocity-track"><i style={{ height: `${Math.max((point.count / maxClones) * 100, point.count ? 5 : 0)}%` }} /></span>
+                  <span className="velocity-label">{index % 2 === 0 || index === cloneSeries.length - 1 ? formatShortDate(point.date) : ''}</span>
+                </div>
+              ))}
+          </div>
+          <aside className="growth-summary" aria-live="polite">
+            <span>Latest day</span>
+            <strong>{latestClones ? formatNumber(latestClones.count) : '—'}</strong>
+            <small>{latestClones ? `${formatNumber(latestClones.uniques)} unique cloners` : 'clones'}</small>
+            <div className={`growth-comparison${cloneComparison !== null && cloneComparison < 0 ? ' is-down' : ''}`}>
+              {cloneComparison === null ? 'Waiting for a prior day' : `${formatGrowthPercentage(cloneComparison)} vs prior day`}
+            </div>
+            <p>Counts git clone/fetch requests seen by GitHub, separate from the release downloads below.</p>
+          </aside>
+        </div>
+      </section>
+
       <section className="stats-grid" aria-label={`${project.name} release download summary`}>
         <StatCard primary loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Release downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
         <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.latest} label="Latest release" value={summary ? formatNumber(summary.latest.downloads) : '—'} icon={<Activity size={18} />} note={summary ? <><span className="version-chip">{summary.latest.version}</span> asset downloads</> : emptyNote} />
@@ -955,41 +990,6 @@ export default function Home() {
         <Info size={18} aria-hidden="true" />
         <div><strong>What this measures</strong><p>GitHub counts requests for the tracked release asset. These figures are release downloads, not unique users or confirmed installations, and they exclude files served through other channels.</p></div>
         <a href="https://docs.github.com/en/rest/releases/assets#about-release-assets" target="_blank" rel="noreferrer">Methodology <ExternalLink size={12} /></a>
-      </section>
-
-      <section className="panel growth-panel" aria-labelledby="clones-title">
-        <div className="card-heading growth-heading">
-          <div>
-            <p className="eyebrow">Repository activity</p>
-            <h2 id="clones-title">Git clones</h2>
-          </div>
-        </div>
-        <div className="growth-layout">
-          <div className="velocity-chart" role="img" aria-label={`Daily git clones for ${project.name}`}>
-            {cloneSeries.length === 0
-              ? <div className="growth-placeholder">
-                  <GitFork size={18} aria-hidden="true" />
-                  <strong>{historyStatus === 'loading' ? 'Loading clone history…' : historyStatus === 'error' ? 'Clone history is unavailable' : 'Collecting clone history'}</strong>
-                  <span>{historyStatus === 'error' ? 'Live totals remain available; clone data will return when the history file can be loaded.' : 'Clone counts appear once GitHub traffic data has been captured for this repository.'}</span>
-                </div>
-              : cloneSeries.map((point, index) => (
-                <div className="velocity-column" key={point.date} aria-label={`${formatShortDate(point.date)}: ${point.count} clones, ${point.uniques} unique cloners`}>
-                  <span className="velocity-value">{formatNumber(point.count)}</span>
-                  <span className="velocity-track"><i style={{ height: `${Math.max((point.count / maxClones) * 100, point.count ? 5 : 0)}%` }} /></span>
-                  <span className="velocity-label">{index % 2 === 0 || index === cloneSeries.length - 1 ? formatShortDate(point.date) : ''}</span>
-                </div>
-              ))}
-          </div>
-          <aside className="growth-summary" aria-live="polite">
-            <span>Latest day</span>
-            <strong>{latestClones ? formatNumber(latestClones.count) : '—'}</strong>
-            <small>{latestClones ? `${formatNumber(latestClones.uniques)} unique cloners` : 'clones'}</small>
-            <div className={`growth-comparison${cloneComparison !== null && cloneComparison < 0 ? ' is-down' : ''}`}>
-              {cloneComparison === null ? 'Waiting for a prior day' : `${formatGrowthPercentage(cloneComparison)} vs prior day`}
-            </div>
-            <p>Counts git clone/fetch requests seen by GitHub, separate from the release downloads above.</p>
-          </aside>
-        </div>
       </section>
 
       <footer>
