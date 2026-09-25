@@ -967,7 +967,7 @@ export default function Home() {
               : cloneSeries.map((point, index) => (
                 <div className="velocity-column" key={point.date} aria-label={`${formatShortDate(point.date)}: ${point.count} clones, ${point.uniques} unique cloners`}>
                   <span className="velocity-value">{formatNumber(point.count)}</span>
-                  <span className="velocity-track"><i style={{ height: `${Math.max((point.count / maxClones) * 100, point.count ? 5 : 0)}%` }} /></span>
+                  <span className="velocity-track"><i className="velocity-fill" style={{ height: `${Math.max((point.count / maxClones) * 100, point.count ? 5 : 0)}%` }} /></span>
                   <span className="velocity-label">{index % 2 === 0 || index === cloneSeries.length - 1 ? formatShortDate(point.date) : ''}</span>
                 </div>
               ))}
