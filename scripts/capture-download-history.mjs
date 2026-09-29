@@ -94,19 +94,36 @@ async function fetchCloneStats(project, capturedDate) {
     .map((day) => ({ date: day.timestamp.slice(0, 10), count: day.count, uniques: day.uniques }));
 }
 
-async function fetchProject(project, capturedDate) {
+// Home Assistant's analytics for custom integrations, keyed by integration domain (the project id).
+// Only branded integrations on installations that opted in to usage analytics are counted.
+// Served without CORS headers, so it can only be captured here rather than fetched by the dashboard.
+async function fetchHaAnalytics() {
+  const response = await fetch('https://analytics.home-assistant.io/custom_integrations.json');
+  if (!response.ok) {
+    console.warn(`Home Assistant analytics returned ${response.status}`);
+    return null;
+  }
+  return response.json();
+}
+
+async function fetchProject(project, capturedDate, haAnalytics) {
   const [releaseStats, clones] = await Promise.all([
     fetchReleaseStats(project),
     fetchCloneStats(project, capturedDate),
   ]);
-  return { ...releaseStats, clones };
+  return {
+    ...releaseStats,
+    clones,
+    ...(haAnalytics ? { haAnalytics: haAnalytics[project.id] ?? null } : {}),
+  };
 }
 
 const projects = JSON.parse(await readFile(projectsPath, 'utf8'));
 const history = JSON.parse(await readFile(historyPath, 'utf8'));
 const capturedAt = new Date().toISOString();
 const capturedDate = capturedAt.slice(0, 10);
-const projectEntries = await Promise.all(projects.map(async (project) => [project.id, await fetchProject(project, capturedDate)]));
+const haAnalytics = await fetchHaAnalytics();
+const projectEntries = await Promise.all(projects.map(async (project) => [project.id, await fetchProject(project, capturedDate, haAnalytics)]));
 const nextSnapshot = { capturedAt, projects: Object.fromEntries(projectEntries) };
 const retentionStart = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
 const retainedSnapshots = history.snapshots.filter((snapshot) => (

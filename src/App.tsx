@@ -10,6 +10,7 @@ import {
   ExternalLink,
   GitBranch,
   GitFork,
+  House,
   Info,
   Layers3,
   Package,
@@ -23,6 +24,8 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } fr
 import projectConfigs from './projects.json';
 import { formatGitHubStarCount, parseGitHubStarCount } from './github';
 import { buildReleaseComparison, formatReleaseAge } from './releaseComparison';
+import { buildInstallVersionColumns } from './haAnalytics';
+import type { HaAnalytics } from './haAnalytics';
 
 type AssetMatcher =
   | { assetName: string; assetNameTemplate?: never }
@@ -91,6 +94,8 @@ type HistoryProjectSnapshot = {
   clones?: CloneMetric[] | null;
   assets?: Record<string, number>;
   releaseAssets?: Record<string, Record<string, number>>;
+  // null when Home Assistant analytics was captured but has no entry for this project
+  haAnalytics?: HaAnalytics | null;
 };
 
 type HistorySnapshot = {
@@ -821,6 +826,24 @@ export default function Home() {
     ? ((latestClones.count - previousClones.count) / previousClones.count) * 100
     : null;
 
+  const haAnalyticsCapture = useMemo(() => {
+    const snapshots = history?.snapshots ?? [];
+    for (let index = snapshots.length - 1; index >= 0; index -= 1) {
+      const projectSnapshot = snapshots[index].projects[project.id];
+      if (projectSnapshot && projectSnapshot.haAnalytics !== undefined) {
+        return { capturedAt: snapshots[index].capturedAt, analytics: projectSnapshot.haAnalytics };
+      }
+    }
+    return null;
+  }, [history, project.id]);
+  const haAnalytics = haAnalyticsCapture?.analytics ?? null;
+  const installColumns = useMemo(() => buildInstallVersionColumns(haAnalytics?.versions ?? {}), [haAnalytics]);
+  const maxInstalls = Math.max(1, ...installColumns.map((column) => column.installs));
+  const installGrowth = useMemo(
+    () => calculateMetricGrowth(history, project.id, (projectSnapshot) => projectSnapshot.haAnalytics?.total ?? Number.NaN),
+    [history, project.id],
+  );
+
   const growthSeries = useMemo(() => buildGrowthSeries(
     history,
     project.id,
@@ -980,6 +1003,45 @@ export default function Home() {
               {cloneComparison === null ? 'Waiting for a prior day' : `${formatGrowthPercentage(cloneComparison)} vs prior day`}
             </div>
             <p>Counts git clone/fetch requests seen by GitHub, separate from the release downloads below.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section className="panel growth-panel clones-panel" aria-labelledby="installs-title">
+        <div className="card-heading growth-heading">
+          <div>
+            <p className="eyebrow">Home Assistant analytics</p>
+            <h2 id="installs-title">Active installations by version</h2>
+          </div>
+        </div>
+        <div className="growth-layout">
+          <div className="velocity-chart" role="img" aria-label={`Active Home Assistant installations of ${project.name} by version`}>
+            {installColumns.length === 0
+              ? <div className="growth-placeholder">
+                  <House size={18} aria-hidden="true" />
+                  <strong>{historyStatus === 'loading' ? 'Loading installation history…' : historyStatus === 'error' ? 'Installation history is unavailable' : haAnalyticsCapture ? 'Not reported by Home Assistant' : 'Collecting installation history'}</strong>
+                  <span>{haAnalyticsCapture ? 'Home Assistant analytics has no installations of this integration yet. It only counts branded custom integrations on installations sharing usage analytics.' : 'Installation counts appear after the next daily capture of Home Assistant analytics.'}</span>
+                </div>
+              : installColumns.map((column) => (
+                <div className="velocity-column" key={column.version} aria-label={`${column.version}: ${column.installs} installations`}>
+                  <span className="velocity-value">{formatNumber(column.installs)}</span>
+                  <span className="velocity-track"><i className="velocity-fill" style={{ height: `${Math.max((column.installs / maxInstalls) * 100, column.installs ? 5 : 0)}%` }} /></span>
+                  <span className="velocity-label">{column.version}</span>
+                </div>
+              ))}
+          </div>
+          <aside className="growth-summary" aria-live="polite">
+            <span>Active installations</span>
+            <strong>{haAnalytics ? formatNumber(haAnalytics.total) : '—'}</strong>
+            <small>{haAnalyticsCapture ? `as of ${formatShortDate(haAnalyticsCapture.capturedAt)}` : 'installations'}</small>
+            <div className={`growth-comparison${installGrowth.week && installGrowth.week.absolute < 0 ? ' is-down' : ''}`}>
+              {installGrowth.week
+                ? `${formatSignedNumber(installGrowth.week.absolute)} in 7 days`
+                : installGrowth.day
+                  ? `${formatSignedNumber(installGrowth.day.absolute)} in 24 hours`
+                  : 'Waiting for a prior capture'}
+            </div>
+            <p>From <a href="https://analytics.home-assistant.io/" target="_blank" rel="noreferrer">Home Assistant analytics</a>. Only installations sharing usage analytics are counted, so this is a floor rather than a total.</p>
           </aside>
         </div>
       </section>
