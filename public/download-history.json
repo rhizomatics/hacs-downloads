@@ -4115,7 +4115,7 @@
       }
     },
     {
-      "capturedAt": "2026-09-29T09:47:20.827Z",
+      "capturedAt": "2026-09-29T10:44:06.358Z",
       "projects": {
         "supernotify": {
           "total": 728,
@@ -4218,8 +4218,9 @@
           }
         },
         "autoarm": {
-          "total": 65,
+          "total": 66,
           "releases": {
+            "v1.4.0-beta1": 1,
             "v1.3.0": 65
           },
           "clones": [
