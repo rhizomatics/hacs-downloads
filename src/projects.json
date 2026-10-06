@@ -25,5 +25,14 @@
     "assetName": "remote_logger.zip",
     "mark": "RL",
     "description": "OTel and Syslog Forwarding for Home Assistant"
+  },
+  {
+    "id": "homeassistant-repl",
+    "name": "REPL for Home Assistant",
+    "owner": "rhizomatics",
+    "repo": "homeassistant-repl",
+    "assetName": "homeassistant-repl.zip",
+    "mark": "RP",
+    "description": "REPL based developer shell for Home Assistant"
   }
 ]
