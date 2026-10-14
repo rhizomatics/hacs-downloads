@@ -36,11 +36,11 @@
     "description": "REPL based developer shell for Home Assistant"
   },
   {
-    "id": "appliances-autonotify",
+    "id": "appliance-autonotify",
     "name": "Automatic Home Assistant notifications for home appliances",
     "owner": "rhizomatics",
-    "repo": "appliances_autonotify",
-    "assetName": "appliances_autonotify.zip",
+    "repo": "appliance_autonotify",
+    "assetName": "appliance_autonotify.zip",
     "mark": "AA",
     "description": "Automatic discovery and notifications for home appliances, and live activity bars on mobile devices using Supernotify"
   }
