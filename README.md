@@ -18,7 +18,7 @@ HACS Download Analytics turns the download counters exposed by GitHub Releases i
 - Track integration `.zip` archives, frontend card `.js` bundles, firmware images, or other release assets with fixed or version-derived filenames.
 - Configure a labeled pair of assets when a project needs separate download counts, such as Factory and OTA firmware images.
 - Review combined totals, asset-level summaries, download share, and individual releases without switching dashboard views.
-- See each selected repository's GitHub star count beside its repository link.
+- See each selected repository's GitHub star count and compare net star changes over 24 hours and 7 days in a dedicated summary card.
 - Compare 24-hour and 7-day growth for totals, latest releases, leading releases, and active-release averages.
 - Explore daily and weekly download velocity as snapshot history accumulates, with stacked asset sections for multi-asset projects.
 - Compare the latest release with the strongest earlier version, including release age and progress toward the previous combined download record.
@@ -198,7 +198,7 @@ Use `/` for a user or organization site served from the domain root.
 
 ## Download history, caching, and API limits
 
-`public/download-history.json` keeps up to 400 days of daily snapshots. Each snapshot stores the total and per-release counters for every configured project. Multi-asset snapshots additionally store totals by asset and asset counters by release so growth and velocity can use the same breakdown as the live dashboard. The dashboard calculates 24-hour and 7-day changes from snapshots taken at approximately the same UTC time.
+`public/download-history.json` keeps up to 400 days of daily snapshots. New snapshots also record repository stars. Star growth starts with snapshots containing stars; older snapshots are not treated as zero. Changes include stars removed. Each snapshot stores the total and per-release counters for every configured project. Multi-asset snapshots additionally store totals by asset and asset counters by release so growth and velocity can use the same breakdown as the live dashboard. The dashboard calculates 24-hour and 7-day changes from snapshots taken at approximately the same UTC time.
 
 The first snapshot establishes the baseline. Daily changes become available after the second snapshot, weekly changes after seven days, and period comparisons after two complete periods. Missing intervals are shown as collecting rather than estimated.
 

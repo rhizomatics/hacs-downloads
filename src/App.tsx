@@ -89,6 +89,7 @@ type CloneMetric = {
 };
 
 type HistoryProjectSnapshot = {
+  stars?: number;
   total: number;
   releases: Record<string, number>;
   clones?: CloneMetric[] | null;
@@ -278,7 +279,7 @@ function isDownloadHistory(value: unknown): value is DownloadHistory {
   ));
 }
 
-function calculateMetricGrowth(
+export function calculateMetricGrowth(
   history: DownloadHistory | null,
   projectId: string,
   getValue: (snapshot: HistoryProjectSnapshot) => number,
@@ -316,7 +317,7 @@ function calculateMetricGrowth(
   };
 }
 
-function buildGrowthSeries(
+export function buildGrowthSeries(
   history: DownloadHistory | null,
   projectId: string,
   period: 'daily' | 'weekly',
@@ -844,6 +845,12 @@ export default function Home() {
     [history, project.id],
   );
 
+  const starGrowth = useMemo(() => calculateMetricGrowth(
+    history,
+    project.id,
+    (projectSnapshot) => parseGitHubStarCount({ stargazers_count: projectSnapshot.stars }) ?? Number.NaN,
+  ), [history, project.id]);
+
   const growthSeries = useMemo(() => buildGrowthSeries(
     history,
     project.id,
@@ -859,6 +866,7 @@ export default function Home() {
         : undefined
       : undefined,
   ), [growthRange, hasAssetBreakdown, history, project.id, trackedAssets]);
+  const growthUnit = hasAssetBreakdown ? 'tracked downloads' : 'downloads';
   const maxGrowth = Math.max(1, ...growthSeries.map((point) => Math.abs(point.value)));
   const latestGrowth = growthSeries.at(-1) ?? null;
   const previousGrowth = growthSeries.at(-2) ?? null;
@@ -1046,7 +1054,81 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="stats-grid" aria-label={`${project.name} release download summary`}>
+      <section className="panel growth-panel clones-panel" aria-labelledby="clones-title">
+        <div className="card-heading growth-heading">
+          <div>
+            <p className="eyebrow">Repository activity</p>
+            <h2 id="clones-title">Git clones</h2>
+          </div>
+        </div>
+        <div className="growth-layout">
+          <div className="velocity-chart" role="img" aria-label={`Daily git clones for ${project.name}`}>
+            {cloneSeries.length === 0
+              ? <div className="growth-placeholder">
+                  <GitFork size={18} aria-hidden="true" />
+                  <strong>{historyStatus === 'loading' ? 'Loading clone history…' : historyStatus === 'error' ? 'Clone history is unavailable' : 'Collecting clone history'}</strong>
+                  <span>{historyStatus === 'error' ? 'Live totals remain available; clone data will return when the history file can be loaded.' : 'Clone counts appear once GitHub traffic data has been captured for this repository.'}</span>
+                </div>
+              : cloneSeries.map((point, index) => (
+                <div className="velocity-column" key={point.date} aria-label={`${formatShortDate(point.date)}: ${point.count} clones, ${point.uniques} unique cloners`}>
+                  <span className="velocity-value">{formatNumber(point.count)}</span>
+                  <span className="velocity-track"><i className="velocity-fill" style={{ height: `${Math.max((point.count / maxClones) * 100, point.count ? 5 : 0)}%` }} /></span>
+                  <span className="velocity-label">{index % 2 === 0 || index === cloneSeries.length - 1 ? formatShortDate(point.date) : ''}</span>
+                </div>
+              ))}
+          </div>
+          <aside className="growth-summary" aria-live="polite">
+            <span>Latest day</span>
+            <strong>{latestClones ? formatNumber(latestClones.count) : '—'}</strong>
+            <small>{latestClones ? `${formatNumber(latestClones.uniques)} unique cloners` : 'clones'}</small>
+            <div className={`growth-comparison${cloneComparison !== null && cloneComparison < 0 ? ' is-down' : ''}`}>
+              {cloneComparison === null ? 'Waiting for a prior day' : `${formatGrowthPercentage(cloneComparison)} vs prior day`}
+            </div>
+            <p>Counts git clone/fetch requests seen by GitHub, separate from the release downloads below.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section className="panel growth-panel clones-panel" aria-labelledby="installs-title">
+        <div className="card-heading growth-heading">
+          <div>
+            <p className="eyebrow">Home Assistant analytics</p>
+            <h2 id="installs-title">Active installations by version</h2>
+          </div>
+        </div>
+        <div className="growth-layout">
+          <div className="velocity-chart" role="img" aria-label={`Active Home Assistant installations of ${project.name} by version`}>
+            {installColumns.length === 0
+              ? <div className="growth-placeholder">
+                  <House size={18} aria-hidden="true" />
+                  <strong>{historyStatus === 'loading' ? 'Loading installation history…' : historyStatus === 'error' ? 'Installation history is unavailable' : haAnalyticsCapture ? 'Not reported by Home Assistant' : 'Collecting installation history'}</strong>
+                  <span>{haAnalyticsCapture ? 'Home Assistant analytics has no installations of this integration yet. It only counts branded custom integrations on installations sharing usage analytics.' : 'Installation counts appear after the next daily capture of Home Assistant analytics.'}</span>
+                </div>
+              : installColumns.map((column) => (
+                <div className="velocity-column" key={column.version} aria-label={`${column.version}: ${column.installs} installations`}>
+                  <span className="velocity-value">{formatNumber(column.installs)}</span>
+                  <span className="velocity-track"><i className="velocity-fill" style={{ height: `${Math.max((column.installs / maxInstalls) * 100, column.installs ? 5 : 0)}%` }} /></span>
+                  <span className="velocity-label">{column.version}</span>
+                </div>
+              ))}
+          </div>
+          <aside className="growth-summary" aria-live="polite">
+            <span>Active installations</span>
+            <strong>{haAnalytics ? formatNumber(haAnalytics.total) : '—'}</strong>
+            <small>{haAnalyticsCapture ? `as of ${formatShortDate(haAnalyticsCapture.capturedAt)}` : 'installations'}</small>
+            <div className={`growth-comparison${installGrowth.week && installGrowth.week.absolute < 0 ? ' is-down' : ''}`}>
+              {installGrowth.week
+                ? `${formatSignedNumber(installGrowth.week.absolute)} in 7 days`
+                : installGrowth.day
+                  ? `${formatSignedNumber(installGrowth.day.absolute)} in 24 hours`
+                  : 'Waiting for a prior capture'}
+            </div>
+            <p>From <a href="https://analytics.home-assistant.io/" target="_blank" rel="noreferrer">Home Assistant analytics</a>. Only installations sharing usage analytics are counted, so this is a floor rather than a total.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section className="stats-grid" aria-label={`${project.name} download and star summary`}>
         {hasAssetBreakdown && secondaryAsset ? <>
           <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.total} label="Tracked downloads" value={summary ? formatNumber(summary.total) : '—'} icon={<Download size={18} />} note={summary ? <>Across {releases.length} tracked releases</> : emptyNote} />
           <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.assets[primaryAsset.id]} label={`${primaryAsset.label} downloads`} value={summary ? formatNumber(assetTotals[primaryAsset.id] ?? 0) : '—'} icon={<Package size={18} />} note={summary ? <>GitHub release asset requests</> : emptyNote} />
@@ -1058,6 +1140,7 @@ export default function Home() {
           <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.leader} label="Most downloaded" value={summary ? formatNumber(summary.leader.downloads) : '—'} icon={<TrendingUp size={18} />} note={summary ? <><span className="version-chip">{summary.leader.version}</span> · {summary.leaderShare}% of total</> : emptyNote} />
           <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={metricGrowth?.average} label="Active-release avg." value={summary ? formatNumber(summary.average) : '—'} icon={<BarChart3 size={18} />} note={summary ? <>Average among downloaded versions</> : emptyNote} />
         </>}
+        <StatCard loading={isInitialLoad} historyStatus={historyStatus} growth={starGrowth} label="GitHub stars" value={stars === undefined ? '—' : formatNumber(stars)} icon={<Star size={18} />} note={<>Net star change in daily snapshots</>} />
       </section>
 
       <section className="panel growth-panel" aria-labelledby="growth-title">
@@ -1076,20 +1159,20 @@ export default function Home() {
           <div
             className="velocity-chart"
             role="img"
-            aria-label={`${growthRange === 'daily' ? 'Daily' : 'Weekly'} new ${hasAssetBreakdown ? 'tracked downloads' : 'downloads'} for ${project.name}`}
+            aria-label={`${growthRange === 'daily' ? 'Daily' : 'Weekly'} new ${growthUnit} for ${project.name}`}
           >
             {growthSeries.length === 0
               ? <div className="growth-placeholder">
                   <CalendarDays size={18} aria-hidden="true" />
                   <strong>{historyStatus === 'loading' ? 'Loading growth history…' : historyStatus === 'error' ? 'Growth history is unavailable' : `Collecting ${growthRange} history`}</strong>
-                  <span>{historyStatus === 'error' ? 'Live totals remain available; growth will return when the history file can be loaded.' : growthRange === 'daily' ? 'The first daily increase appears after the next snapshot.' : 'Weekly increases appear after seven days of snapshots.'}</span>
+                  <span>{historyStatus === 'error' ? 'Live totals remain available; growth will return when the history file can be loaded.' : growthRange === 'daily' ? 'The first daily change appears after two snapshots containing this metric.' : 'Weekly changes appear after seven days of snapshots containing this metric.'}</span>
                 </div>
               : growthSeries.map((point, index) => {
                 const primaryDownloads = point.assets?.[primaryAsset.id] ?? 0;
                 const secondaryDownloads = secondaryAsset ? point.assets?.[secondaryAsset.id] ?? 0 : 0;
                 const showAssetStack = hasAssetBreakdown && secondaryAsset && primaryDownloads >= 0 && secondaryDownloads >= 0;
                 return (
-                <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} new ${hasAssetBreakdown ? `tracked downloads, ${primaryDownloads} ${primaryAsset.label}, ${secondaryDownloads} ${secondaryAsset?.label}` : 'downloads'}`}>
+                <div className="velocity-column" key={point.capturedAt} aria-label={`${point.label}: ${point.value} net new ${hasAssetBreakdown ? `tracked downloads, ${primaryDownloads} ${primaryAsset.label}, ${secondaryDownloads} ${secondaryAsset?.label}` : growthUnit}`}>
                   <span className="velocity-value">{formatSignedNumber(point.value)}</span>
                   <span className="velocity-track">
                     {showAssetStack
@@ -1107,7 +1190,7 @@ export default function Home() {
           <aside className="growth-summary" aria-live="polite">
             <span>Latest {growthRange === 'daily' ? '24 hours' : '7 days'}</span>
             <strong>{latestGrowth ? formatSignedNumber(latestGrowth.value) : '—'}</strong>
-            <small>new {hasAssetBreakdown ? 'tracked downloads' : 'downloads'}</small>
+            <small>net new {growthUnit}</small>
             {latestGrowth?.assets && hasAssetBreakdown && secondaryAsset && (
               <div className="growth-asset-totals">
                 <span><i className="asset-primary" />{primaryAsset.label} {formatSignedNumber(latestGrowth.assets[primaryAsset.id] ?? 0)}</span>
@@ -1117,7 +1200,7 @@ export default function Home() {
             <div className={`growth-comparison${growthComparison !== null && growthComparison < 0 ? ' is-down' : ''}`}>
               {growthComparison === null ? 'Waiting for a prior period' : `${formatGrowthPercentage(growthComparison)} vs prior period`}
             </div>
-            <p>History is captured daily at approximately 04:17 UTC.</p>
+            <p>History is captured daily at approximately 04:17 UTC. Changes are net gains and may be negative.</p>
           </aside>
         </div>
       </section>
