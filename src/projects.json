@@ -10,7 +10,7 @@
   },
   {
     "id": "autoarm",
-    "name": "AutoArm",
+    "name": "Auto Arm",
     "owner": "rhizomatics",
     "repo": "autoarm",
     "assetName": "autoarm.zip",
