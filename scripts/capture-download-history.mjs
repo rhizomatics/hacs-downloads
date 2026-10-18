@@ -46,7 +46,7 @@ async function fetchReleaseStats(project) {
   if (!response.ok) throw new Error(`${project.owner}/${project.repo}: GitHub returned ${response.status}`);
 
   const payload = await response.json();
-  const repositoryResponse = await fetch(`https://api.github.com/repos/${project.owner}/${project.repo}`, { headers });
+  const repositoryResponse = await fetch(`https://api.github.com/repos/${project.owner}/${project.repo}`, { headers: releaseHeaders });
   if (!repositoryResponse.ok) throw new Error(`Repository metadata returned ${repositoryResponse.status}`);
   const { stargazers_count: stars } = await repositoryResponse.json();
   if (!Number.isSafeInteger(stars) || stars < 0) throw new Error('Invalid GitHub star count');
