@@ -43,5 +43,14 @@
     "assetName": "appliance_autonotify.zip",
     "mark": "AA",
     "description": "Automatic discovery and notifications for home appliances, and live activity bars on mobile devices using Supernotify"
+  },
+    {
+    "id": "camera-autonotify",
+    "name": "Automatic Home Assistant notifications for Frigate and other security cameras",
+    "owner": "rhizomatics",
+    "repo": "camera_autonotify",
+    "assetName": "camera_autonotify.zip",
+    "mark": "AA",
+    "description": "Automatic discovery and notifications for security cameras, with direct Frigate integration, for rich notifications using Supernotify"
   }
 ]
