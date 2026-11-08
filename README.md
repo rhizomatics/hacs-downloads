@@ -2,7 +2,7 @@
 
 [![Deploy dashboard](https://github.com/thomasgregg/hacs-downloads/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/thomasgregg/hacs-downloads/actions/workflows/deploy-pages.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/) [![managed by hq](https://raw.githubusercontent.com/rhizomatics/hq/main/assets/badge-managed-by-hq.svg)](https://github.com/rhizomatics/hq)
 
 A fast, privacy-friendly dashboard for exploring GitHub release-asset downloads across Home Assistant and ESPHome projects.
 
