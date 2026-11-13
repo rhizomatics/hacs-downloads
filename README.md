@@ -1,3 +1,9 @@
+> **Retired.** Rhizomatics' download stats now live at
+> [hq.rhizomatics.org.uk/usage](https://hq.rhizomatics.org.uk/usage/), alongside npm, PyPI, container
+> pulls and Home Assistant installs. This fork's Pages site redirects there, and its history up to
+> November 2026 is kept in the HQ data. The original project is
+> [thomasgregg/hacs-downloads](https://github.com/thomasgregg/hacs-downloads).
+
 # HACS Download Analytics
 
 [![Deploy dashboard](https://github.com/thomasgregg/hacs-downloads/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/thomasgregg/hacs-downloads/actions/workflows/deploy-pages.yml)

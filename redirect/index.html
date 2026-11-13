@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moved to Rhizomatics HQ</title>
+<link rel="canonical" href="https://hq.rhizomatics.org.uk/usage/">
+<meta http-equiv="refresh" content="0; url=https://hq.rhizomatics.org.uk/usage/">
+<meta name="robots" content="noindex">
+<script>
+  // Old links used ?project=<id>; send them to that component's page.
+  const ids = {
+    supernotify: 'supernotify',
+    autoarm: 'autoarm',
+    remote_logger: 'remote_logger',
+    'homeassistant-repl': 'homeassistant-repl',
+    'appliance-autonotify': 'appliance_autonotify',
+    'camera-autonotify': 'camera_autonotify',
+  };
+  const id = ids[new URLSearchParams(location.search).get('project')];
+  location.replace(`https://hq.rhizomatics.org.uk/usage/${id ? `${id}/` : ''}`);
+</script>
+<style>body { font: 16px/1.5 system-ui, sans-serif; margin: 3rem 1rem; text-align: center; }</style>
+</head>
+<body>
+<p>These download stats have moved to <a href="https://hq.rhizomatics.org.uk/usage/">Rhizomatics HQ</a>,
+which also covers npm, PyPI, container pulls and Home Assistant installs.</p>
+</body>
+</html>
