@@ -30411,6 +30411,561 @@
           "haAnalytics": null
         }
       }
+    },
+    {
+      "capturedAt": "2026-11-13T12:17:59.605Z",
+      "projects": {
+        "supernotify": {
+          "total": 4788,
+          "releases": {
+            "v2.18.0": 437,
+            "v2.18.0-beta7": 2,
+            "v2.17.1": 16,
+            "v2.17.0": 277,
+            "v2.16.2": 324,
+            "v2.16.1": 31,
+            "v2.16.0": 503,
+            "v2.15.0": 393,
+            "v2.14.0": 333,
+            "v2.13.2": 358,
+            "v2.13.1": 258,
+            "v2.13.0": 246,
+            "v2.12.0": 307,
+            "v2.11.1": 253,
+            "v2.11.0": 263,
+            "v2.10.3": 352,
+            "v2.10.2": 197,
+            "v2.10.1": 238
+          },
+          "stars": 23,
+          "clones": [
+            {
+              "date": "2026-10-30",
+              "count": 157,
+              "uniques": 32
+            },
+            {
+              "date": "2026-10-31",
+              "count": 161,
+              "uniques": 59
+            },
+            {
+              "date": "2026-11-01",
+              "count": 220,
+              "uniques": 59
+            },
+            {
+              "date": "2026-11-02",
+              "count": 140,
+              "uniques": 51
+            },
+            {
+              "date": "2026-11-03",
+              "count": 71,
+              "uniques": 41
+            },
+            {
+              "date": "2026-11-04",
+              "count": 119,
+              "uniques": 37
+            },
+            {
+              "date": "2026-11-05",
+              "count": 171,
+              "uniques": 41
+            },
+            {
+              "date": "2026-11-06",
+              "count": 163,
+              "uniques": 51
+            },
+            {
+              "date": "2026-11-07",
+              "count": 588,
+              "uniques": 147
+            },
+            {
+              "date": "2026-11-08",
+              "count": 858,
+              "uniques": 206
+            },
+            {
+              "date": "2026-11-09",
+              "count": 245,
+              "uniques": 86
+            },
+            {
+              "date": "2026-11-10",
+              "count": 112,
+              "uniques": 36
+            },
+            {
+              "date": "2026-11-11",
+              "count": 31,
+              "uniques": 18
+            },
+            {
+              "date": "2026-11-12",
+              "count": 34,
+              "uniques": 8
+            }
+          ],
+          "haAnalytics": {
+            "total": 84,
+            "versions": {
+              "2.18.0": 59,
+              "2.16.0": 7,
+              "2.17.1": 3,
+              "2.16.1": 3,
+              "1.16.5": 1,
+              "2.16.2": 2,
+              "2.4.2": 1,
+              "1.17.0": 1,
+              "2.17.0": 3,
+              "2.15.0": 2,
+              "2.12.0": 1,
+              "1.16.1": 1
+            }
+          }
+        },
+        "autoarm": {
+          "total": 413,
+          "releases": {
+            "v2.1.0": 170,
+            "v2.0.0": 83,
+            "v1.4.0": 85,
+            "v1.3.0": 75
+          },
+          "stars": 5,
+          "clones": [
+            {
+              "date": "2026-10-30",
+              "count": 30,
+              "uniques": 15
+            },
+            {
+              "date": "2026-10-31",
+              "count": 8,
+              "uniques": 4
+            },
+            {
+              "date": "2026-11-01",
+              "count": 121,
+              "uniques": 29
+            },
+            {
+              "date": "2026-11-02",
+              "count": 82,
+              "uniques": 26
+            },
+            {
+              "date": "2026-11-03",
+              "count": 62,
+              "uniques": 26
+            },
+            {
+              "date": "2026-11-04",
+              "count": 59,
+              "uniques": 26
+            },
+            {
+              "date": "2026-11-05",
+              "count": 49,
+              "uniques": 12
+            },
+            {
+              "date": "2026-11-06",
+              "count": 43,
+              "uniques": 18
+            },
+            {
+              "date": "2026-11-07",
+              "count": 66,
+              "uniques": 12
+            },
+            {
+              "date": "2026-11-08",
+              "count": 262,
+              "uniques": 74
+            },
+            {
+              "date": "2026-11-09",
+              "count": 30,
+              "uniques": 13
+            },
+            {
+              "date": "2026-11-10",
+              "count": 87,
+              "uniques": 24
+            },
+            {
+              "date": "2026-11-11",
+              "count": 80,
+              "uniques": 34
+            },
+            {
+              "date": "2026-11-12",
+              "count": 13,
+              "uniques": 9
+            }
+          ],
+          "haAnalytics": {
+            "total": 5,
+            "versions": {
+              "2.1.0": 4,
+              "1.4.0": 1
+            }
+          }
+        },
+        "remote_logger": {
+          "total": 1281,
+          "releases": {
+            "v2.11.1": 182,
+            "v2.11.0": 187,
+            "v2.10.0": 243,
+            "v2.0.7": 323,
+            "v2.0.6": 141,
+            "v2.0.5": 199,
+            "v2.0.5-beta1": 6
+          },
+          "stars": 14,
+          "clones": [
+            {
+              "date": "2026-10-30",
+              "count": 22,
+              "uniques": 12
+            },
+            {
+              "date": "2026-10-31",
+              "count": 38,
+              "uniques": 26
+            },
+            {
+              "date": "2026-11-01",
+              "count": 282,
+              "uniques": 71
+            },
+            {
+              "date": "2026-11-02",
+              "count": 163,
+              "uniques": 57
+            },
+            {
+              "date": "2026-11-03",
+              "count": 94,
+              "uniques": 33
+            },
+            {
+              "date": "2026-11-04",
+              "count": 89,
+              "uniques": 29
+            },
+            {
+              "date": "2026-11-05",
+              "count": 55,
+              "uniques": 27
+            },
+            {
+              "date": "2026-11-06",
+              "count": 26,
+              "uniques": 14
+            },
+            {
+              "date": "2026-11-07",
+              "count": 10,
+              "uniques": 7
+            },
+            {
+              "date": "2026-11-08",
+              "count": 162,
+              "uniques": 48
+            },
+            {
+              "date": "2026-11-09",
+              "count": 58,
+              "uniques": 17
+            },
+            {
+              "date": "2026-11-10",
+              "count": 382,
+              "uniques": 80
+            },
+            {
+              "date": "2026-11-11",
+              "count": 153,
+              "uniques": 49
+            },
+            {
+              "date": "2026-11-12",
+              "count": 34,
+              "uniques": 14
+            }
+          ],
+          "haAnalytics": {
+            "total": 67,
+            "versions": {
+              "2.0.3": 2,
+              "2.1.0": 12,
+              "2.0.7": 14,
+              "2.11.0": 31,
+              "2.0.4": 2,
+              "2.11.1": 5,
+              "2.0.6": 1
+            }
+          }
+        },
+        "homeassistant-repl": {
+          "total": 0,
+          "releases": {},
+          "stars": 0,
+          "clones": [
+            {
+              "date": "2026-10-30",
+              "count": 133,
+              "uniques": 56
+            },
+            {
+              "date": "2026-10-31",
+              "count": 91,
+              "uniques": 34
+            },
+            {
+              "date": "2026-11-01",
+              "count": 130,
+              "uniques": 40
+            },
+            {
+              "date": "2026-11-02",
+              "count": 128,
+              "uniques": 49
+            },
+            {
+              "date": "2026-11-03",
+              "count": 41,
+              "uniques": 17
+            },
+            {
+              "date": "2026-11-04",
+              "count": 133,
+              "uniques": 43
+            },
+            {
+              "date": "2026-11-05",
+              "count": 135,
+              "uniques": 44
+            },
+            {
+              "date": "2026-11-06",
+              "count": 37,
+              "uniques": 15
+            },
+            {
+              "date": "2026-11-07",
+              "count": 46,
+              "uniques": 20
+            },
+            {
+              "date": "2026-11-08",
+              "count": 169,
+              "uniques": 50
+            },
+            {
+              "date": "2026-11-09",
+              "count": 37,
+              "uniques": 14
+            },
+            {
+              "date": "2026-11-10",
+              "count": 32,
+              "uniques": 11
+            },
+            {
+              "date": "2026-11-11",
+              "count": 43,
+              "uniques": 17
+            },
+            {
+              "date": "2026-11-12",
+              "count": 21,
+              "uniques": 10
+            }
+          ],
+          "haAnalytics": null
+        },
+        "appliance-autonotify": {
+          "total": 105,
+          "releases": {
+            "v0.14.0-beta4": 3,
+            "v0.13.0": 49,
+            "v0.12.0": 13,
+            "v0.11.0": 10,
+            "v0.10.0": 9,
+            "v0.9.0": 11,
+            "v0.8.2": 10
+          },
+          "stars": 3,
+          "clones": [
+            {
+              "date": "2026-10-30",
+              "count": 36,
+              "uniques": 17
+            },
+            {
+              "date": "2026-10-31",
+              "count": 6,
+              "uniques": 4
+            },
+            {
+              "date": "2026-11-01",
+              "count": 88,
+              "uniques": 17
+            },
+            {
+              "date": "2026-11-02",
+              "count": 46,
+              "uniques": 16
+            },
+            {
+              "date": "2026-11-03",
+              "count": 67,
+              "uniques": 20
+            },
+            {
+              "date": "2026-11-04",
+              "count": 71,
+              "uniques": 16
+            },
+            {
+              "date": "2026-11-05",
+              "count": 16,
+              "uniques": 6
+            },
+            {
+              "date": "2026-11-06",
+              "count": 31,
+              "uniques": 13
+            },
+            {
+              "date": "2026-11-07",
+              "count": 51,
+              "uniques": 19
+            },
+            {
+              "date": "2026-11-08",
+              "count": 184,
+              "uniques": 48
+            },
+            {
+              "date": "2026-11-09",
+              "count": 118,
+              "uniques": 30
+            },
+            {
+              "date": "2026-11-10",
+              "count": 70,
+              "uniques": 21
+            },
+            {
+              "date": "2026-11-11",
+              "count": 107,
+              "uniques": 18
+            },
+            {
+              "date": "2026-11-12",
+              "count": 42,
+              "uniques": 22
+            }
+          ],
+          "haAnalytics": null
+        },
+        "camera-autonotify": {
+          "total": 111,
+          "releases": {
+            "v0.7.2": 25,
+            "v0.7.1": 2,
+            "v0.7.0": 2,
+            "v0.6.0": 6,
+            "v0.5.0": 15,
+            "v0.4.0": 35,
+            "v0.3.1": 25,
+            "v0.3.0": 1
+          },
+          "stars": 1,
+          "clones": [
+            {
+              "date": "2026-10-30",
+              "count": 4,
+              "uniques": 3
+            },
+            {
+              "date": "2026-10-31",
+              "count": 2,
+              "uniques": 2
+            },
+            {
+              "date": "2026-11-01",
+              "count": 85,
+              "uniques": 19
+            },
+            {
+              "date": "2026-11-02",
+              "count": 53,
+              "uniques": 19
+            },
+            {
+              "date": "2026-11-03",
+              "count": 19,
+              "uniques": 7
+            },
+            {
+              "date": "2026-11-04",
+              "count": 21,
+              "uniques": 11
+            },
+            {
+              "date": "2026-11-05",
+              "count": 53,
+              "uniques": 19
+            },
+            {
+              "date": "2026-11-06",
+              "count": 126,
+              "uniques": 42
+            },
+            {
+              "date": "2026-11-07",
+              "count": 54,
+              "uniques": 28
+            },
+            {
+              "date": "2026-11-08",
+              "count": 131,
+              "uniques": 36
+            },
+            {
+              "date": "2026-11-09",
+              "count": 17,
+              "uniques": 3
+            },
+            {
+              "date": "2026-11-10",
+              "count": 31,
+              "uniques": 8
+            },
+            {
+              "date": "2026-11-11",
+              "count": 250,
+              "uniques": 44
+            },
+            {
+              "date": "2026-11-12",
+              "count": 16,
+              "uniques": 11
+            }
+          ],
+          "haAnalytics": null
+        }
+      }
     }
   ]
 }
